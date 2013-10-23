@@ -20,6 +20,7 @@ module SevenZipRuby
 
     def open(stream, param = {})
       param[:password] = param[:password].to_s if (param[:password])
+      stream.set_encoding(Encoding::ASCII_8BIT)
       open_impl(stream, param)
       return self
     end
@@ -154,4 +155,7 @@ module SevenZipRuby
       end
     end
   end
+
+
+  Reader = SevenZipReader
 end

@@ -22,6 +22,7 @@ module SevenZipRuby
     end
 
     def open(stream, param = {})
+      stream.set_encoding(Encoding::ASCII_8BIT)
       open_impl(stream, param)
       return self
     end
@@ -69,4 +70,7 @@ module SevenZipRuby
     end
     private :compress_proc
   end
+
+
+  Writer = SevenZipWriter
 end

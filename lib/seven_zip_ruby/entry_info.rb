@@ -37,7 +37,7 @@ module SevenZipRuby
       else
         type = "File"
       end
-      return "[#{type}:#{index} :#{path}]"
+      return "[#{type}: #{index}: #{path}]"
     end
   end
 end

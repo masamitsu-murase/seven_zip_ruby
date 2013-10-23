@@ -178,7 +178,7 @@ describe SevenZipRuby do
   describe SevenZipRuby::SevenZipWriter do
 
     example "compress without block" do
-      output = StringIO.new("".b)
+      output = StringIO.new("")
       szw = SevenZipRuby::SevenZipWriter.new
       szw.open(output)
       szw.add_buffer("hoge.txt", "This is hoge.txt.")
@@ -190,7 +190,7 @@ describe SevenZipRuby do
     end
 
     example "compress" do
-      output = StringIO.new("".b)
+      output = StringIO.new("")
       SevenZipRuby::SevenZipWriter.open(output) do |szw|
         szw.add_buffer("hoge.txt", "This is hoge.txt.")
         szw.add_buffer("hoge2.txt", "This is hoge2.txt.")
@@ -200,7 +200,7 @@ describe SevenZipRuby do
 
     example "use various methods" do
       [ "COPY", "DEFLATE", "LZMA", "LZMA2", "BZIP2", "PPMd" ].each do |type|
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.method = type
           szw.add_buffer("hoge.txt", SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA)
@@ -214,7 +214,7 @@ describe SevenZipRuby do
 
     example "set compression level" do
       size = [ 0, 1, 3, 5, 7, 9 ].map do |level|
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.level = level
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
@@ -231,7 +231,7 @@ describe SevenZipRuby do
 
     example "set solid" do
       size = [ false, true ].map do |solid|
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.solid = solid
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
@@ -245,7 +245,7 @@ describe SevenZipRuby do
 
     example "set header_compression" do
       size = [ false, true ].map do |header_compression|
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.header_compression = header_compression
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
@@ -260,7 +260,7 @@ describe SevenZipRuby do
 
     example "set multi_thread" do
       time = [ false, true ].map do |multi_thread|
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         start = nil
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.method = "BZIP2"  # BZIP2 uses multi threads.
@@ -281,7 +281,7 @@ describe SevenZipRuby do
         error = StandardError.new
 
         [ :write, :seek ].each do |method|
-          output = StringIO.new("".b)
+          output = StringIO.new("")
           output.define_singleton_method(method) do |*args|
             raise error
           end
@@ -290,11 +290,11 @@ describe SevenZipRuby do
       end
 
       example "invalid method" do
-        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("".b)).method = "Unknown" }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).method = "Unknown" }.to raise_error
       end
 
       example "invalid level" do
-        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("".b)).level = 2 }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).level = 2 }.to raise_error
       end
 
       example "add_buffer/add_directory/compress/close before open" do
@@ -312,7 +312,7 @@ describe SevenZipRuby do
       end
 
       example "add_buffer after close" do
-        output = StringIO.new("".b)
+        output = StringIO.new("")
         szw = SevenZipRuby::SevenZipWriter.new
         szw.open(output)
         szw.close

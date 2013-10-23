@@ -10,42 +10,62 @@ This extension calls the native library, 7z.dll or 7z.so, internally and it is i
 
 ## Examples
 
-*This is alpha version.*  
+**This is pre-alpha version.**  
 The interfaces may be changed.
 
 ### Simple use
 
 #### Extract archive
 ```ruby
-SevenZipRuby::Reader.open("filename.7z") do |szr|
-  szr.extract :all, "path_to_dir"
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.open(file) do |szr|
+    szr.extract_all "path_to_dir"
+  end
 end
 ```
 
 #### Show entries in archive
 ```ruby
-SevenZipRuby::Reader.open("filename.7z") do |szr|
-  list = szr.entries
-  p list
-  # => [...]
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.open(file) do |szr|
+    list = szr.entries
+    p list
+    # => [ "[Dir: 0: dir/subdir]", "[File: 1: dir/file.txt]", ... ]
+  end
 end
 ```
 
 #### Compress files
 ```ruby
-SevenZipRuby::Writer.open("filename.7z") do |szr|
+File.open("filename.7z", "wb") do |file|
+  SevenZipRuby::Writer.open(file) do |szr|
+    szr.add_file "entry1.txt"
+    szr.add_directory "dir1"
+  end
+end
+```
+
+```ruby
+stream = StringIO.new("")
+SevenZipRuby::Writer.open(stream) do |szr|
   szr.add_file "entry1.txt"
   szr.add_directory "dir1"
 end
+p stream.string
 ```
 
 ### More
 
 #### Extract partially
 
+Extract files whose size is less than 1024.
+
 ```ruby
-SevenZipRuby::Reader.open("filename.7z") do |szr|
-  small_files = szr.entries.select{ |i| i.file? && i.size < 1024 }
-  szr.extract(small_files)
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.open(file) do |szr|
+    small_files = szr.entries.select{ |i| i.file? && i.size < 1024 }
+    szr.extract(small_files)
+  end
 end
 ```
+
