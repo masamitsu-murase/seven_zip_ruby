@@ -140,6 +140,7 @@ module SevenZipRuby
         return ret
 
       else
+        index = index.to_i
         item = entry(index)
         return nil unless (item.has_data?)
 

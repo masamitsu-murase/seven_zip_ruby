@@ -62,6 +62,15 @@ describe SevenZipRuby do
       end
     end
 
+    example "extract selected data from archive" do
+      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+        SevenZipRuby::SevenZipReader.open(file) do |szr|
+          entries = szr.entries.select{ |i| i.file? }
+          expect(szr.extract_data(entries).all?).to eq true
+        end
+      end
+    end
+
     example "run in another thread" do
       File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
         szr = nil
