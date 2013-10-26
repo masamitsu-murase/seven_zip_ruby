@@ -207,7 +207,7 @@ ArchiveReader::ArchiveReader(const GUID &format_guid)
         return;
     }
 
-    m_in_archive = archive;
+    m_in_archive.Attach(archive);
 }
 
 void ArchiveReader::setProcessingStream(VALUE stream, UInt32 index, Int32 askExtractMode)
@@ -299,7 +299,6 @@ VALUE ArchiveReader::close()
 
     runWithoutGvl([&](){
         m_in_archive->Close();
-        finishRubyAction();
     });
     std::vector<VALUE>().swap(m_rb_entry_info_list);
 
@@ -710,14 +709,13 @@ ArchiveWriter::ArchiveWriter(const GUID &format_guid)
         return;
     }
 
-    m_out_archive = archive;
+    m_out_archive.Attach(archive);
 }
 
 VALUE ArchiveWriter::open(VALUE out_stream, VALUE param)
 {
     checkStateToBeginOperation(STATE_INITIAL);
     prepareAction();
-    EventLoopThreadExecuter te(this);
 
     m_rb_out_stream = out_stream;
     m_rb_callback_proc = Qnil;
@@ -742,7 +740,6 @@ VALUE ArchiveWriter::addItem(VALUE item)
 {
     checkStateToBeginOperation(STATE_OPENED);
     prepareAction();
-    EventLoopThreadExecuter te(this);
 
     m_rb_update_list.push_back(item);
 
@@ -805,11 +802,7 @@ VALUE ArchiveWriter::close()
 
     checkStateToBeginOperation(STATE_OPENED, STATE_COMPRESSED);
     prepareAction();
-    EventLoopThreadExecuter te(this);
 
-    runWithoutGvl([&](){
-        finishRubyAction();
-    });
     std::vector<VALUE>().swap(m_rb_update_list);
 
     checkState(STATE_OPENED, STATE_COMPRESSED, "close error");
