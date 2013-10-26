@@ -32,12 +32,20 @@ module SevenZipRuby
       return self
     end
 
+    def add_file(filename)
+      path = Pathname(filename)
+      raise ArgumentError.new("filename should be relative") if (path.absolute?)
+
+      name = path.cleanpath.to_s.encode(PATH_ENCODING)
+      add_item(UpdateInfo.file(name, name, self))
+      return self
+    end
+
     def add_buffer(filename, data)
       path = Pathname(filename)
       raise ArgumentError.new("filename should be relative") if (path.absolute?)
 
       name = path.cleanpath.to_s.encode(PATH_ENCODING)
-      data = data.b
       add_item(UpdateInfo.buffer(name, data))
       return self
     end
@@ -59,7 +67,7 @@ module SevenZipRuby
           if (info.buffer?)
             next StringIO.new(info.data)
           elsif (info.file?)
-            # TODO
+            next File.open(info.data, "rb")
           else
             next nil
           end

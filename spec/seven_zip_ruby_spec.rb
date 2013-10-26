@@ -207,6 +207,23 @@ describe SevenZipRuby do
       end
     end
 
+    example "compress local file" do
+      Dir.chdir(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) do
+        output = StringIO.new("")
+        SevenZipRuby::SevenZipWriter.open(output) do |szw|
+          data = SevenZipRubySpecHelper::SAMPLE_DATA[0]
+          szw.add_file(data[:name])
+        end
+
+        output.rewind
+        SevenZipRuby::SevenZipReader.open(output) do |szr|
+          data = SevenZipRubySpecHelper::SAMPLE_DATA[0]
+          expect(szr.entries[0].path.to_s).to eq data[:name]
+          expect(szr.extract_data(0)).to eq data[:data]
+        end
+      end
+    end
+
     example "use various methods" do
       [ "COPY", "DEFLATE", "LZMA", "LZMA2", "BZIP2", "PPMd" ].each do |type|
         output = StringIO.new("")

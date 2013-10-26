@@ -288,6 +288,7 @@ class ArchiveWriter : public ArchiveBase
     VALUE addItem(VALUE item);
     VALUE compress(VALUE callback_proc);
     VALUE close();
+    VALUE getFileAttribute(VALUE path);
 
   protected:
     virtual HRESULT setOption(ISetProperties *set) = 0;

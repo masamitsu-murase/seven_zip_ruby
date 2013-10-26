@@ -811,6 +811,19 @@ VALUE ArchiveWriter::close()
     return Qnil;
 }
 
+VALUE ArchiveWriter::getFileAttribute(VALUE path)
+{
+#ifdef _WIN32
+    BSTR str = ConvertStringToBstr(RSTRING_PTR(path), RSTRING_LEN(path));
+    DWORD attr = ::GetFileAttributesW(str);
+    SysFreeString(str);
+    return ULONG2NUM(attr);
+#else
+    // TODO
+    return ULONG2NUM(0);
+#endif
+}
+
 void ArchiveWriter::setProcessingStream(VALUE stream, UInt32 index)
 {
     m_rb_in_stream = stream;
@@ -1564,6 +1577,7 @@ extern "C" void Init_seven_zip_archive(void)
     rb_define_method_ext(cls, "add_item", WRITER_FUNC(addItem, 1));
     rb_define_method_ext(cls, "compress_impl", WRITER_FUNC(compress, 1));
     rb_define_method_ext(cls, "close", WRITER_FUNC(close, 0));
+    rb_define_method_ext(cls, "get_file_attribute", WRITER_FUNC(getFileAttribute, 1));
 
     rb_define_method_ext(cls, "method=", WRITER_FUNC2(setMethod, 1));
     rb_define_method_ext(cls, "method", WRITER_FUNC2(method, 0));

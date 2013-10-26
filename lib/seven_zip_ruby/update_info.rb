@@ -8,6 +8,10 @@ module SevenZipRuby
       def dir(name)
         new(:dir, { name: name })
       end
+
+      def file(name, filepath, szw)
+        new(:file, { name: name, filepath: filepath, szw: szw })
+      end
     end
 
     def initialize(type, param)
@@ -17,6 +21,8 @@ module SevenZipRuby
         initialize_buffer(param[:name], param[:data])
       when :dir
         initialize_dir(param[:name])
+      when :file
+        initialize_file(param[:name], param[:filepath], param[:szw])
       end
     end
 
@@ -49,6 +55,25 @@ module SevenZipRuby
       @attrib = 0x10
       @posix_attrib = 0x00
       @ctime = @atime = @mtime = Time.now
+      @user = @group = nil
+    end
+
+    def initialize_file(name, filepath, szw)
+      @index_in_archive = nil
+      @new_data = true
+      @new_properties = true
+      @anti = false
+
+      @path = name.to_s
+      @dir = false
+      filepath = Pathname(filepath).expand_path
+      @data = filepath.to_s
+      @size = filepath.size
+      @attrib = szw.get_file_attribute(filepath.to_s)
+      @posix_attrib = 0x00
+      @ctime = filepath.ctime
+      @atime = filepath.atime
+      @mtime = filepath.mtime
       @user = @group = nil
     end
 
