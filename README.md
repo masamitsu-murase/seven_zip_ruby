@@ -15,9 +15,7 @@ The interfaces may be changed.
 
 If you have any comments about interface API, let me know please.
 
-### Simple use
-
-#### Extract archive
+### Extract archive
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
@@ -26,7 +24,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-#### Show entries in archive
+### Show entries in archive
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
@@ -37,7 +35,16 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-#### Compress files
+### Extract encrypted archive
+```ruby
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.open(file, { password: "Password String" }) do |szr|
+    szr.extract_all "path_to_dir"
+  end
+end
+```
+
+### Compress files
 ```ruby
 File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
@@ -57,9 +64,16 @@ end
 p stream.string
 ```
 
-### More examples
+## Supported platforms
 
-#### Extract partially
+* Windows
+* Linux
+
+Mac OSX will be supported in the later version.
+
+## More examples
+
+### Extract partially
 
 Extract files whose size is less than 1024.
 
@@ -72,7 +86,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-#### Get data from archive
+### Get data from archive
 
 Extract data into memory.
 
