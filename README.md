@@ -42,8 +42,8 @@ end
 File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
     szr.add_file "entry1.txt"
-    szr.add_directory "dir1"
-	szr.add_buffer "entry2.txt", "binary_data 123456"
+    szr.mkdir "dir1"
+    szr.add_buffer "entry2.txt", "binary_data 123456"
   end
 end
 ```
@@ -52,7 +52,7 @@ end
 stream = StringIO.new("")
 SevenZipRuby::Writer.open(stream) do |szr|
   szr.add_file "entry1.txt"
-  szr.add_directory "dir1"
+  szr.mkdir "dir1"
 end
 p stream.string
 ```

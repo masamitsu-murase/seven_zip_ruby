@@ -50,7 +50,7 @@ module SevenZipRuby
       return self
     end
 
-    def add_directory(directory_name)
+    def mkdir(directory_name)
       path = Pathname(directory_name)
       raise ArgumentError.new("directory_name should be relative") if (path.absolute?)
 

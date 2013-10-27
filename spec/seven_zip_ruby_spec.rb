@@ -192,7 +192,7 @@ describe SevenZipRuby do
       szw.open(output)
       szw.add_buffer("hoge.txt", "This is hoge.txt.")
       szw.add_buffer("hoge2.txt", "This is hoge2.txt.")
-      szw.add_directory("hoge/hoge/hoge")
+      szw.mkdir("hoge/hoge/hoge")
       szw.compress
       szw.close
       output.close
@@ -203,7 +203,7 @@ describe SevenZipRuby do
       SevenZipRuby::SevenZipWriter.open(output) do |szw|
         szw.add_buffer("hoge.txt", "This is hoge.txt.")
         szw.add_buffer("hoge2.txt", "This is hoge2.txt.")
-        szw.add_directory("hoge/hoge/hoge")
+        szw.mkdir("hoge/hoge/hoge")
       end
     end
 
@@ -323,12 +323,12 @@ describe SevenZipRuby do
         expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).level = 2 }.to raise_error
       end
 
-      example "add_buffer/add_directory/compress/close before open" do
+      example "add_buffer/mkdir/compress/close before open" do
         szw = SevenZipRuby::SevenZipWriter.new
         expect{ szw.add_buffer("hoge.txt", "This is hoge.txt.") }.to raise_error(SevenZipRuby::InvalidOperation)
 
         szw = SevenZipRuby::SevenZipWriter.new
-        expect{ szw.add_directory("hoge/hoge") }.to raise_error(SevenZipRuby::InvalidOperation)
+        expect{ szw.mkdir("hoge/hoge") }.to raise_error(SevenZipRuby::InvalidOperation)
 
         szw = SevenZipRuby::SevenZipWriter.new
         expect{ szw.compress }.to raise_error(SevenZipRuby::InvalidOperation)
