@@ -105,7 +105,7 @@ void ArchiveBase::startEventLoopThread()
 
 void ArchiveBase::rubyWaitForAction()
 {
-    RubyActionTuple tuple = { &ACTION_END, false };
+    RubyActionTuple tuple = std::make_pair(&ACTION_END, false);
 
     runWithoutGvl([&](){
         while(!m_action_tuple){
@@ -139,7 +139,7 @@ bool ArchiveBase::runRubyActionImpl(RubyAction *action)
         return false;
     }
 
-    RubyActionTuple tuple = { action, false };
+    RubyActionTuple tuple = std::make_pair(action, false);
 
     MutexLocker locker(&m_action_mutex);
     while(m_action_tuple){
@@ -506,8 +506,6 @@ VALUE ArchiveReader::extractAll(VALUE callback_proc)
 
 VALUE ArchiveReader::testAll(VALUE detail)
 {
-    using namespace NArchive::NExtract::NOperationResult;
-
     checkStateToBeginOperation(STATE_OPENED);
     prepareAction();
     EventLoopThreadExecuter te(this);
@@ -524,7 +522,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
         throw RubyCppUtil::RubyException("Cannot get number of items");
     }
     m_test_result.resize(num);
-    std::fill(m_test_result.begin(), m_test_result.end(), kOK);
+    std::fill(m_test_result.begin(), m_test_result.end(), NArchive::NExtract::NOperationResult::kOK);
 
     runWithoutGvl([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
@@ -538,6 +536,8 @@ VALUE ArchiveReader::testAll(VALUE detail)
     }
 
     if (RTEST(detail)){
+        using namespace NArchive::NExtract::NOperationResult;
+
         VALUE unsupportedMethod = ID2SYM(INTERN("UnsupportedMethod"));
         VALUE dataError = ID2SYM(INTERN("DataError"));
         VALUE crcError = ID2SYM(INTERN("CrcError"));
@@ -567,6 +567,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
         }
         return ary;
     }else{
+        using namespace NArchive::NExtract::NOperationResult;
         return (std::find_if(m_test_result.begin(), m_test_result.end(),
                              std::bind2nd(std::not_equal_to<Int32>(), kOK))
                 == m_test_result.end()) ? Qtrue : Qfalse;
@@ -1166,8 +1167,6 @@ STDMETHODIMP ArchiveExtractCallback::PrepareOperation(Int32 askExtractMode)
 
 STDMETHODIMP ArchiveExtractCallback::SetOperationResult(Int32 resultOperationResult)
 {
-    using namespace NArchive::NExtract::NOperationResult;
-
     UInt32 index;
     VALUE stream;
     Int32 askExtractMode;
@@ -1187,6 +1186,8 @@ STDMETHODIMP ArchiveExtractCallback::SetOperationResult(Int32 resultOperationRes
     if (!NIL_P(stream)){
         VALUE proc = m_archive->callbackProc();
         bool ret = m_archive->runRubyAction([&](){
+            using namespace NArchive::NExtract::NOperationResult;
+
             VALUE arg_hash = rb_hash_new();
             rb_hash_aset(arg_hash, ID2SYM(INTERN("info")), m_archive->entryInfo(index));
             rb_hash_aset(arg_hash, ID2SYM(INTERN("stream")), stream);
