@@ -67,7 +67,7 @@ p stream.string
 ## Supported platforms
 
 * Windows
-* Linux
+* Linux (partially tested)
 
 Mac OSX will be supported in the later version.
 
@@ -101,6 +101,36 @@ end
 p data
 #  => "File content. ...."
 ```
+
+### Set compression mode
+
+7zip supports LZMA, LZMA2, PPMD, BZIP2, DEFLATE and COPY.  
+
+```ruby
+# random data
+data = 50000000.to_enum(:times).map{ rand(256) }.pack("C*")
+
+a = StringIO.new("")
+start = Time.now
+SevenZipRuby::Writer.open(a) do |szr|
+  szr.method = "BZIP2"     # Set compression method to "BZIP2"
+  szr.multi_thread = true  # Enable multi-threading mode (default)
+  szr.add_buffer("test.bin", data)
+end
+p(Time.now - start)
+#  => 3.607563
+
+a = StringIO.new("")
+start = Time.now
+SevenZipRuby::Writer.open(a) do |szr|
+  szr.method = "BZIP2"     # Set compression method to "BZIP2"
+  szr.multi_thread = false # Disable multi-threading mode
+  szr.add_buffer("test.bin", data)
+end
+p(Time.now - start)
+#  => 11.180934  # Slower than multi-threaded compression.
+```
+
 
 ## License
 LGPL and unRAR license. Please refer to LICENSE.txt.
