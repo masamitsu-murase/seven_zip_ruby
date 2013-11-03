@@ -3,6 +3,7 @@
 require_relative("seven_zip_ruby/version")
 
 Dir.chdir("#{__dir__}/seven_zip_ruby"){ require_relative("seven_zip_ruby/seven_zip_archive") }
+raise "Failed to initialize SevenZipRuby" unless (defined?(SevenZipRuby::SevenZipReader))
 
 require_relative("seven_zip_ruby/seven_zip_reader")
 require_relative("seven_zip_ruby/seven_zip_writer")
