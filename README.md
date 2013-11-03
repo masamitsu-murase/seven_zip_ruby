@@ -132,6 +132,12 @@ p(Time.now - start)
 ```
 
 
+## TODO
+
+* Support attributes.
+* Support Mac and Linux.
+
+
 ## License
 LGPL and unRAR license. Please refer to LICENSE.txt.
 
