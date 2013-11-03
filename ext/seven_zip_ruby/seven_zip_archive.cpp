@@ -137,12 +137,7 @@ void ArchiveBase::cancelAction(void *p)
 
 void ArchiveBase::cancelAction()
 {
-return;
-    MutexLocker locker(&m_action_mutex);
-    if (m_event_loop_running){
-        m_event_loop_running = false;
-        m_action_cond_var.broadcast();
-    }
+    setErrorState();
 }
 
 bool ArchiveBase::runRubyActionImpl(RubyAction *action)
@@ -195,8 +190,10 @@ void ArchiveBase::prepareAction()
 
 void ArchiveBase::terminateEventLoopThread()
 {
-    runNativeFunc([&](){
+    runNativeFuncProtect([&](){
         finishRubyAction();
+    }, [&](){
+        // Nothing to do.
     });
 }
 
@@ -1132,6 +1129,10 @@ STDMETHODIMP ArchiveExtractCallback::SetTotal(UInt64 size)
 
 STDMETHODIMP ArchiveExtractCallback::SetCompleted(const UInt64 *completeValue)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
+    if (m_archive->isErrorState()){
+        return E_FAIL;
+    }
     return S_OK;
 }
 
@@ -1243,6 +1244,9 @@ STDMETHODIMP ArchiveUpdateCallback::SetTotal(UInt64 size)
 
 STDMETHODIMP ArchiveUpdateCallback::SetCompleted(const UInt64 *completeValue)
 {
+    if (m_archive->isErrorState()){
+        return E_FAIL;
+    }
     return S_OK;
 }
 

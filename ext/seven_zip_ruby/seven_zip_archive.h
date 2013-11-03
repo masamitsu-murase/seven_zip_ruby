@@ -154,7 +154,7 @@ void ArchiveBase::runNativeFunc(T func)
     typedef std::function<void ()> func_type;
     func_type protected_func = [&](){
         rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
-                                   cancelAction, 0);
+                                   cancelAction, reinterpret_cast<void*>(this));
     };
 
     int state = 0;
@@ -227,6 +227,10 @@ class ArchiveReader : public ArchiveBase
     void mark();
     void checkStateToBeginOperation(ArchiveReaderState expected, const std::string &msg = "Invalid operation");
     void checkState(ArchiveReaderState expected, const std::string &msg);
+    bool isErrorState()
+    {
+        return m_state == STATE_ERROR;
+    }
 
     // Called from Ruby script.
     VALUE open(VALUE in_stream, VALUE param);
@@ -306,6 +310,10 @@ class ArchiveWriter : public ArchiveBase
     void checkState(ArchiveWriterState expected, const std::string &msg);
     void checkState(ArchiveWriterState expected1, ArchiveWriterState expected2,
                     const std::string &msg);
+    bool isErrorState()
+    {
+        return m_state == STATE_ERROR;
+    }
 
     // Called from Ruby script.
     VALUE open(VALUE out_stream, VALUE param);

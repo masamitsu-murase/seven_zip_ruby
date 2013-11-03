@@ -197,6 +197,19 @@ describe SevenZipRuby do
 
         sleep 1
         expect{ th.kill }.not_to raise_error  # Thread can be killed.
+
+
+        th = Thread.start do
+          SevenZipRuby::SevenZipWriter.open(output) do |szw|
+            szw.method = "BZIP2"
+            szw.level = 9
+            szw.multi_thread = false
+            szw.add_buffer("hoge.txt", SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 2)
+          end
+        end
+
+        sleep 0.1  # Highly dependes on CPU speed...
+        expect{ th.kill }.not_to raise_error # Thread can be killed.
       end
 
     end
