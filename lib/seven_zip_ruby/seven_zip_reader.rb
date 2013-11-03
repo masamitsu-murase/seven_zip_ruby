@@ -7,11 +7,8 @@ module SevenZipRuby
         szr = self.new
         szr.open(*args)
         if (block)
-          begin
-            block.call(szr)
-          ensure
-            szr.close
-          end
+          block.call(szr)
+          szr.close
         else
           szr
         end

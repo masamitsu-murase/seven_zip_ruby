@@ -9,12 +9,9 @@ module SevenZipRuby
         szw = self.new
         szw.open(stream, param)
         if (block)
-          begin
-            block.call(szw)
-            szw.compress
-          ensure
-            szw.close
-          end
+          block.call(szw)
+          szw.compress
+          szw.close
         else
           szw
         end
