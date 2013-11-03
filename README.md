@@ -136,6 +136,8 @@ p(Time.now - start)
 
 * Support attributes.
 * Support Mac and Linux.
+* Support updating archive.
+* Support extracting rar archive.
 
 
 ## License
