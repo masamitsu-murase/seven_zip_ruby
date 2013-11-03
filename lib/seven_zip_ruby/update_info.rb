@@ -69,7 +69,7 @@ module SevenZipRuby
       filepath = Pathname(filepath).expand_path
       @data = filepath.to_s
       @size = filepath.size
-      @attrib = szw.get_file_attribute(filepath.to_s)
+      @attrib = (szw.get_file_attribute(filepath.to_s) || 0x20)
       @posix_attrib = 0x00
       @ctime = filepath.ctime
       @atime = filepath.atime

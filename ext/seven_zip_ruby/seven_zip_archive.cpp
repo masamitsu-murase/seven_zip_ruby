@@ -829,7 +829,7 @@ VALUE ArchiveWriter::getFileAttribute(VALUE path)
     return ULONG2NUM(attr);
 #else
     // TODO
-    return ULONG2NUM(0);
+    return Qnil;
 #endif
 }
 
