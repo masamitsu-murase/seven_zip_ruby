@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
   spec.email         = ["masamitsu.murase@gmail.com"]
   spec.description   = %q{HOGE: Write a gem description}
   spec.summary       = %q{This is a wrapper extension of 7-Zip.}
-  spec.homepage      = ""
-  spec.license       = "TODO: 7-Zip license"
+  spec.homepage      = "https://github.com/masamitsu-murase/seven_zip_ruby"
+  spec.license       = "LGPL + unRAR"
 
   spec.files         = `git ls-files`.split($/).select{ |i| !(i.start_with?("pkg")) }
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
