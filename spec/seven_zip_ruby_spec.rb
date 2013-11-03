@@ -179,6 +179,26 @@ describe SevenZipRuby do
         end
       end
 
+      example "kill thread" do
+        th = Thread.start do
+          File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+            class << file
+              alias orig_read read
+
+              def read(*args)
+                sleep 2
+                return orig_read(*args)
+              end
+            end
+
+            SevenZipRuby::SevenZipReader.open(file)
+          end
+        end
+
+        sleep 1
+        expect{ th.kill }.not_to raise_error  # Thread can be killed.
+      end
+
     end
 
   end
