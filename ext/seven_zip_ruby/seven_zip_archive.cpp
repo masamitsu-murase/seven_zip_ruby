@@ -49,31 +49,52 @@ ArchiveBase::~ArchiveBase()
 
 void ArchiveBase::rubyEventLoop()
 {
-    m_event_loop_running = true;
-
     m_action_mutex.lock();
     while(m_event_loop_running){
-        rubyWaitForAction();
-        RubyActionTuple *action_tuple = m_action_tuple;
         m_action_mutex.unlock();
 
+        RubyActionTuple end_tuple = std::make_pair(&ACTION_END, false);
+        RubyActionTuple *action_tuple = nullptr;
+
+        bool success = runNativeFuncProtect([&](){
+            MutexLocker locker(&m_action_mutex);
+            while(!m_action_tuple){
+                m_action_cond_var.wait(&m_action_mutex);
+            }
+            action_tuple = m_action_tuple;
+        }, [&](){
+            MutexLocker locker(&m_action_mutex);
+            if (m_event_loop_running){
+                m_action_tuple = &end_tuple;
+                m_action_cond_var.broadcast();
+            }
+        });
+        if (!success){
+            MutexLocker locker(&m_action_mutex);
+            action_tuple = &end_tuple;
+        }
+
         RubyAction *action = action_tuple->first;
+        bool event_loop_running = m_event_loop_running;
         if (action == &ACTION_END){
-            m_event_loop_running = false;
             action_tuple->second = true;
+            event_loop_running = false;
         }else if (m_action_result.isError()){
             action_tuple->second = false;
         }else{
             int status = 0;
             rb_protect(runProtectedRubyAction, reinterpret_cast<VALUE>(action), &status);
+            action_tuple->second = (status == 0);
+
             if (status && !m_action_result.isError()){
                 m_action_result.status = status;
                 m_action_result.exception = rb_gv_get("$!");
+                event_loop_running = false;
             }
-            action_tuple->second = (status == 0);
         }
 
         m_action_mutex.lock();
+        m_event_loop_running = event_loop_running;
         m_action_tuple = nullptr;
         m_action_cond_var.broadcast();
     }
@@ -96,32 +117,12 @@ VALUE ArchiveBase::staticRubyEventLoop(void *p)
 
 void ArchiveBase::startEventLoopThread()
 {
+    MutexLocker locker(&m_action_mutex);
     if (m_event_loop_running){
         return;
     }
     m_event_loop_running = true;
     rb_thread_create(RUBY_METHOD_FUNC(staticRubyEventLoop), this);
-}
-
-void ArchiveBase::rubyWaitForAction()
-{
-    RubyActionTuple tuple = std::make_pair(&ACTION_END, false);
-
-    runWithoutGvl([&](){
-        while(!m_action_tuple){
-            m_action_cond_var.wait(&m_action_mutex);
-        }
-    }, [&](){
-        if (m_event_loop_running){
-            m_action_mutex.lock();
-            m_action_tuple = &tuple;
-            m_action_cond_var.broadcast();
-            m_event_loop_running = false;
-            m_action_mutex.unlock();
-            // Do not wait until m_action_tuple is null
-            // because ubf may be called with GVL.
-        }
-    });
 }
 
 void ArchiveBase::cancelAction(void *p)
@@ -130,19 +131,31 @@ void ArchiveBase::cancelAction(void *p)
         return;
     }
 
-    // TODO
+    ArchiveBase *self = reinterpret_cast<ArchiveBase*>(p);
+    self->cancelAction();
+}
+
+void ArchiveBase::cancelAction()
+{
+return;
+    MutexLocker locker(&m_action_mutex);
+    if (m_event_loop_running){
+        m_event_loop_running = false;
+        m_action_cond_var.broadcast();
+    }
 }
 
 bool ArchiveBase::runRubyActionImpl(RubyAction *action)
 {
+    MutexLocker locker(&m_action_mutex);
+
     if (!action || !m_event_loop_running){
         return false;
     }
 
     RubyActionTuple tuple = std::make_pair(action, false);
 
-    MutexLocker locker(&m_action_mutex);
-    while(m_action_tuple){
+    while(m_action_tuple && m_event_loop_running){
         m_action_cond_var.wait(&m_action_mutex);
     }
     if (!m_event_loop_running){
@@ -153,11 +166,11 @@ bool ArchiveBase::runRubyActionImpl(RubyAction *action)
 
     m_action_cond_var.broadcast();
 
-    while(m_action_tuple == &tuple){
+    while(m_action_tuple == &tuple && m_event_loop_running){
         m_action_cond_var.wait(&m_action_mutex);
     }
 
-    return tuple.second;
+    return (tuple.second && m_event_loop_running);
 }
 
 bool ArchiveBase::runRubyAction(RubyAction action)
@@ -182,14 +195,9 @@ void ArchiveBase::prepareAction()
 
 void ArchiveBase::terminateEventLoopThread()
 {
-    if (m_event_loop_running){
-        runWithoutGvl([&](){
-            finishRubyAction();
-        });
-
-        m_event_loop_running = false;
-        m_action_tuple = nullptr;
-    }
+    runNativeFunc([&](){
+        finishRubyAction();
+    });
 }
 
 ////////////////////////////////////////////////////////////////
@@ -262,7 +270,7 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
     }
 
     HRESULT ret = E_FAIL;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ArchiveOpenCallback *callback;
         if (m_password_specified){
             callback = new ArchiveOpenCallback(this, m_password);
@@ -279,7 +287,7 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
 
     checkState(STATE_INITIAL, "Open error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format.");
+        throw RubyCppUtil::RubyException("Invalid file format. open");
     }
 
     m_state = STATE_OPENED;
@@ -297,7 +305,7 @@ VALUE ArchiveReader::close()
     prepareAction();
     EventLoopThreadExecuter te(this);
 
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         m_in_archive->Close();
     });
     std::vector<VALUE>().swap(m_rb_entry_info_list);
@@ -315,7 +323,7 @@ VALUE ArchiveReader::entryNum()
     EventLoopThreadExecuter te(this);
 
     UInt32 num;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         HRESULT ret = m_in_archive->GetNumberOfItems(&num);
         if (ret != S_OK){
             num = 0xFFFFFFFF;
@@ -349,7 +357,7 @@ VALUE ArchiveReader::getArchiveProperty()
     const unsigned int size = sizeof(list)/sizeof(list[0]);
 
     NWindows::NCOM::CPropVariant variant_list[size];
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         for (unsigned int i=0; i<size; i++){
             HRESULT ret = m_in_archive->GetArchiveProperty(list[i].prop_id, &variant_list[i]);
             if (ret != S_OK || variant_list[i].vt != list[i].vt){
@@ -430,7 +438,7 @@ VALUE ArchiveReader::extract(VALUE index, VALUE callback_proc)
 
     UInt32 i = NUM2ULONG(index);
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
         CMyComPtr<IArchiveExtractCallback> callback(extract_callback);
         ret = m_in_archive->Extract(&i, 1, 0, extract_callback);
@@ -440,7 +448,7 @@ VALUE ArchiveReader::extract(VALUE index, VALUE callback_proc)
 
     checkState(STATE_OPENED, "extract error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format.");
+        throw RubyCppUtil::RubyException("Invalid file format. extract");
     }
 
     return Qnil;
@@ -461,7 +469,7 @@ VALUE ArchiveReader::extractFiles(VALUE index_list, VALUE callback_proc)
                    list.begin(), [](VALUE num){ return NUM2ULONG(num); });
 
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
         CMyComPtr<IArchiveExtractCallback> callback(extract_callback);
         ret = m_in_archive->Extract(&list[0], list.size(), 0, extract_callback);
@@ -471,7 +479,7 @@ VALUE ArchiveReader::extractFiles(VALUE index_list, VALUE callback_proc)
 
     checkState(STATE_OPENED, "extractFiles error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format.");
+        throw RubyCppUtil::RubyException("Invalid file format. extractFiles");
     }
 
     return Qnil;
@@ -488,7 +496,7 @@ VALUE ArchiveReader::extractAll(VALUE callback_proc)
     fillEntryInfo();
 
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
         CMyComPtr<IArchiveExtractCallback> callback(extract_callback);
         ret = m_in_archive->Extract(0, (UInt32)(Int32)(-1), 0, extract_callback);
@@ -498,7 +506,7 @@ VALUE ArchiveReader::extractAll(VALUE callback_proc)
 
     checkState(STATE_OPENED, "extractAll error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format.");
+        throw RubyCppUtil::RubyException("Invalid file format. extractAll");
     }
 
     return Qnil;
@@ -514,7 +522,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
 
     UInt32 num;
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ret = m_in_archive->GetNumberOfItems(&num);
     });
     checkState(STATE_OPENED, "testAll error");
@@ -524,7 +532,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
     m_test_result.resize(num);
     std::fill(m_test_result.begin(), m_test_result.end(), NArchive::NExtract::NOperationResult::kOK);
 
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
         CMyComPtr<IArchiveExtractCallback> callback(extract_callback);
         ret = m_in_archive->Extract(0, (UInt32)(Int32)(-1), 1, extract_callback);
@@ -615,7 +623,7 @@ void ArchiveReader::fillEntryInfo()
 
     UInt32 num;
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         ret = m_in_archive->GetNumberOfItems(&num);
     });
     if (ret != S_OK || m_state == STATE_ERROR){
@@ -624,7 +632,7 @@ void ArchiveReader::fillEntryInfo()
 
     std::vector< std::array< NWindows::NCOM::CPropVariant, size > > variant_list(num);
 
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         for (UInt32 idx=0; idx<num; idx++){
             for (unsigned int i=0; i<size; i++){
                 HRESULT ret = m_in_archive->GetProperty(idx, list[i].prop_id, &variant_list[idx][i]);
@@ -688,7 +696,7 @@ void ArchiveReader::checkState(ArchiveReaderState expected, const std::string &m
     }
 }
 
-void ArchiveReader::cancelAction()
+void ArchiveReader::setErrorState()
 {
     m_state = STATE_ERROR;
 }
@@ -759,7 +767,7 @@ VALUE ArchiveWriter::compress(VALUE callback_proc)
 
     HRESULT opt_ret;
     HRESULT ret;
-    runWithoutGvl([&](){
+    runNativeFunc([&](){
         CMyComPtr<ISetProperties> set;
         m_out_archive->QueryInterface(IID_ISetProperties, (void **)&set);
         opt_ret = setOption(set);
@@ -931,7 +939,7 @@ void ArchiveWriter::checkState(ArchiveWriterState expected1, ArchiveWriterState 
     }
 }
 
-void ArchiveWriter::cancelAction()
+void ArchiveWriter::setErrorState()
 {
     m_state = STATE_ERROR;
 }

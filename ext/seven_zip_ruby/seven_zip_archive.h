@@ -107,21 +107,22 @@ class ArchiveBase
     ~ArchiveBase();
     void rubyEventLoop();
     static VALUE staticRubyEventLoop(void *p);
-    void rubyWaitForAction();
     bool runRubyAction(RubyAction action);
     void finishRubyAction();
     static void cancelAction(void *p);
-    virtual void cancelAction() = 0;
+    void cancelAction();
     static VALUE runProtectedRubyAction(VALUE p);
 
     template<typename T>
-      void runWithoutGvl(T func);
+      void runNativeFunc(T func);
     template<typename T, typename U>
-      void runWithoutGvl(T func, U cancel);
+      bool runNativeFuncProtect(T func, U cancel);
     template<typename T>
       static void *staticRunFunctor(void *p);
     template<typename T>
       static void staticRunFunctor2(void *p);
+    template<typename T>
+      static VALUE staticRunFunctorForProtect(VALUE p);
 
   protected:
     void mark();
@@ -131,6 +132,7 @@ class ArchiveBase
     void startEventLoopThread();
     void terminateEventLoopThread();
     bool runRubyActionImpl(RubyAction *action);
+    virtual void setErrorState() = 0;
 
 
   private:
@@ -140,7 +142,6 @@ class ArchiveBase
     RubyActionTuple *m_action_tuple;
     Mutex m_action_mutex;
     ConditionVariable m_action_cond_var;
-
     bool m_event_loop_running;
 
   protected:
@@ -148,19 +149,33 @@ class ArchiveBase
 };
 
 template<typename T>
-void ArchiveBase::runWithoutGvl(T func)
+void ArchiveBase::runNativeFunc(T func)
 {
-    // TODO
-    // cancelAction should be replaced with a valid function.
-    rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
-                               cancelAction, 0);
+    typedef std::function<void ()> func_type;
+    func_type protected_func = [&](){
+        rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
+                                   cancelAction, 0);
+    };
+
+    int state = 0;
+    rb_protect(staticRunFunctorForProtect<func_type>, reinterpret_cast<VALUE>(&protected_func), &state);
+    if (state){
+        throw RubyCppUtil::RubyException("Interrupted");
+    }
 }
 
 template<typename T, typename U>
-void ArchiveBase::runWithoutGvl(T func, U cancel)
+bool ArchiveBase::runNativeFuncProtect(T func, U cancel)
 {
-    rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
-                               staticRunFunctor2<U>, reinterpret_cast<void*>(&cancel));
+    typedef std::function<void ()> func_type;
+    func_type protected_func = [&](){
+        rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
+                                   staticRunFunctor2<U>, reinterpret_cast<void*>(&cancel));
+    };
+
+    int state = 0;
+    rb_protect(staticRunFunctorForProtect<func_type>, reinterpret_cast<VALUE>(&protected_func), &state);
+    return (state == 0);
 }
 
 template<typename T>
@@ -177,6 +192,14 @@ void ArchiveBase::staticRunFunctor2(void *p)
     T *t = reinterpret_cast<T*>(p);
     (*t)();
     return;
+}
+
+template<typename T>
+VALUE ArchiveBase::staticRunFunctorForProtect(VALUE p)
+{
+    T *t = reinterpret_cast<T*>(p);
+    (*t)();
+    return Qnil;
 }
 
 class ArchiveReader : public ArchiveBase
@@ -204,7 +227,6 @@ class ArchiveReader : public ArchiveBase
     void mark();
     void checkStateToBeginOperation(ArchiveReaderState expected, const std::string &msg = "Invalid operation");
     void checkState(ArchiveReaderState expected, const std::string &msg);
-    virtual void cancelAction();
 
     // Called from Ruby script.
     VALUE open(VALUE in_stream, VALUE param);
@@ -220,6 +242,9 @@ class ArchiveReader : public ArchiveBase
     VALUE setFileAttribute(VALUE path, VALUE attrib);
 
     VALUE entryInfo(UInt32 index);
+
+  protected:
+    virtual void setErrorState();
 
   private:
     ArchiveExtractCallback *createArchiveExtractCallback();
@@ -281,7 +306,6 @@ class ArchiveWriter : public ArchiveBase
     void checkState(ArchiveWriterState expected, const std::string &msg);
     void checkState(ArchiveWriterState expected1, ArchiveWriterState expected2,
                     const std::string &msg);
-    virtual void cancelAction();
 
     // Called from Ruby script.
     VALUE open(VALUE out_stream, VALUE param);
@@ -292,6 +316,7 @@ class ArchiveWriter : public ArchiveBase
 
   protected:
     virtual HRESULT setOption(ISetProperties *set) = 0;
+    virtual void setErrorState();
 
   private:
     VALUE m_rb_callback_proc;
