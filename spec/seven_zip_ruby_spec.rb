@@ -93,6 +93,8 @@ describe SevenZipRuby do
         expect(szr.test).to eq true
       end
 
+      expect(SevenZipRuby::SevenZipReader.verify(StringIO.new(data))).to eq true
+
       data[0x27] = 0xEB.chr  # This highly dependes on the current test binary.
       SevenZipRuby::SevenZipReader.open(StringIO.new(data)) do |szr|
         expect(szr.test).to eq false

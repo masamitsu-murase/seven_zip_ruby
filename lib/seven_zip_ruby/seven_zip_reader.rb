@@ -13,6 +13,13 @@ module SevenZipRuby
           szr
         end
       end
+
+      def verify(*args)
+        szr = self.open(*args)
+        ret = szr.verify
+        szr.close
+        return ret
+      end
     end
 
     def open(stream, param = {})
