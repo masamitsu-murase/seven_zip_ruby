@@ -1,4 +1,4 @@
-# SevenZipRuby
+# SevenZipRuby ![Logo](https://raw.github.com/masamitsu-murase/seven_zip_ruby/master/resources/seven_zip_ruby_logo.png)
 
 This is a Ruby gem library to handle [7-Zip](http://www.7-zip.org) archives.
 
@@ -10,7 +10,7 @@ This extension calls the native library, 7z.dll or 7z.so, internally and it is i
 
 ## Examples
 
-**This is pre-alpha version.**  
+**This is a beta version.**  
 The interfaces may be changed.
 
 If you have any comments about interface API, let me know please.
@@ -41,6 +41,14 @@ File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file, { password: "Password String" }) do |szr|
     szr.extract_all "path_to_dir"
   end
+end
+```
+
+### Verify archive
+```ruby
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.verify(file)
+  # => true/false
 end
 ```
 
@@ -134,7 +142,8 @@ p(Time.now - start)
 
 ## TODO
 
-* Support attributes.
+* Support file attributes correctly.
+* Support convenient methods.
 * Support Mac and Linux.
 * Support updating archive.
 * Support extracting rar archive.

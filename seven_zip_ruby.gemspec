@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/masamitsu-murase/seven_zip_ruby"
   spec.license       = "LGPL + unRAR"
 
-  spec.files         = `git ls-files`.split($/).select{ |i| !(i.start_with?("pkg")) }
+  spec.files         = `git ls-files`.split($/).select{ |i| !(i.start_with?("pkg") || i.start_with?("resources")) }
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
