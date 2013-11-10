@@ -98,7 +98,7 @@ describe SevenZipRuby do
       data[0x27] = 0xEB.chr  # This highly dependes on the current test binary.
       SevenZipRuby::SevenZipReader.open(StringIO.new(data)) do |szr|
         expect(szr.test).to eq false
-        expect(szr.verify_detail).to eq [ :DataError, :DataError, true, true, true ]
+        expect(szr.verify_detail).to eq [ :DataError, :DataError, :DataError, true, true, true ]
       end
 
 
@@ -112,7 +112,7 @@ describe SevenZipRuby do
       end
 
       SevenZipRuby::SevenZipReader.open(StringIO.new(data), { password: "wrong password" }) do |szr|
-        expect(szr.verify_detail).to eq [ :DataError, :DataError, true, true, true ]
+        expect(szr.verify_detail).to eq [ :DataError, :DataError, :DataError, true, true, true ]
       end
     end
 

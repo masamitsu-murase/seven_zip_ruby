@@ -15,6 +15,7 @@ module SevenZipRubySpecHelper
     { name: "empty_file.txt", data: "", directory: false },
     { name: "directory", directory: true },
     { name: "directory/utf8_file.txt", data: "日本語のファイル".force_encoding("ASCII-8BIT"), directory: false },
+    { name: "directory/utf8_name®.txt", data: "日本語のファイル".force_encoding("ASCII-8BIT"), directory: false },
     { name: "empty_directory", directory: true }
   ]
   SAMPLE_LARGE_RANDOM_DATA = (0...100000).to_a.pack("L*")

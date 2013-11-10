@@ -4,7 +4,7 @@ module SevenZipRuby
   class EntryInfo
     def initialize(index, path, method, dir, encrypted, anti, size, pack_size, ctime, atime, mtime, attrib, crc)
       @index, @path, @method, @dir, @encrypted, @anti, @size, @pack_size, @ctime, @atime, @mtime, @attrib, @crc =
-        index, Pathname(path).cleanpath, method, dir, encrypted, anti, size, pack_size, ctime, atime, mtime, attrib, crc
+        index, Pathname(path.to_s.force_encoding(Encoding::UTF_8)).cleanpath, method, dir, encrypted, anti, size, pack_size, ctime, atime, mtime, attrib, crc
     end
 
     attr_reader :index, :path, :method, :size, :pack_size, :ctime, :atime, :mtime, :attrib, :crc
