@@ -259,6 +259,36 @@ describe SevenZipRuby do
       end
     end
 
+    example "add_directory" do
+      Dir.chdir(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) do
+        output = StringIO.new("")
+        SevenZipRuby::SevenZipWriter.open(output) do |szw|
+          Pathname.glob("*") do |path|
+            if (path.file?)
+              szw.add_file(path)
+            else
+              szw.add_directory(path)
+            end
+          end
+        end
+
+        output.rewind
+        SevenZipRuby::SevenZipReader.open(output) do |szr|
+          entries = szr.entries
+          expect(entries.size).to eq SevenZipRubySpecHelper::SAMPLE_DATA.size
+
+          entries.each do |entry|
+            entry_in_sample = SevenZipRubySpecHelper::SAMPLE_DATA.find{ |i| i[:name] == entry.path.to_s }
+            if (entry_in_sample[:directory])
+              expect(entry.directory?).to eq true
+            else
+              expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
+            end
+          end
+        end
+      end
+    end
+
     example "use various methods" do
       [ "COPY", "DEFLATE", "LZMA", "LZMA2", "BZIP2", "PPMd" ].each do |type|
         output = StringIO.new("")

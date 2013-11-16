@@ -47,6 +47,26 @@ module SevenZipRuby
       return self
     end
 
+    def add_directory(directory)
+      directory = Pathname(directory).cleanpath
+      raise ArgumentError.new("directory should be relative") if (directory.absolute?)
+
+      mkdir(directory)
+
+      Pathname.glob(directory.join("**").to_s) do |entry|
+        if (entry.file?)
+          add_file(entry)
+        elsif (entry.directory?)
+          mkdir(entry)
+        else
+          raise "#{entry} is invalid entry"
+        end
+      end
+
+      return self
+    end
+    alias add_dir add_directory
+
     def mkdir(directory_name)
       path = Pathname(directory_name)
       raise ArgumentError.new("directory_name should be relative") if (path.absolute?)
