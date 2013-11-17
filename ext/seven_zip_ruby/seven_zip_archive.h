@@ -151,9 +151,12 @@ class ArchiveBase
 template<typename T>
 void ArchiveBase::runNativeFunc(T func)
 {
+    void *(*functor)(void *);
+    functor = staticRunFunctor<T>;
+
     typedef std::function<void ()> func_type;
     func_type protected_func = [&](){
-        rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
+        rb_thread_call_without_gvl(functor, reinterpret_cast<void*>(&func),
                                    cancelAction, reinterpret_cast<void*>(this));
     };
 
@@ -167,10 +170,15 @@ void ArchiveBase::runNativeFunc(T func)
 template<typename T, typename U>
 bool ArchiveBase::runNativeFuncProtect(T func, U cancel)
 {
+    void *(*functor)(void *);
+    void (*functor2)(void *);
+    functor = staticRunFunctor<T>;
+    functor2 = staticRunFunctor2<U>;
+
     typedef std::function<void ()> func_type;
     func_type protected_func = [&](){
-        rb_thread_call_without_gvl(staticRunFunctor<T>, reinterpret_cast<void*>(&func),
-                                   staticRunFunctor2<U>, reinterpret_cast<void*>(&cancel));
+        rb_thread_call_without_gvl(functor, reinterpret_cast<void*>(&func),
+                                   functor2, reinterpret_cast<void*>(&cancel));
     };
 
     int state = 0;
