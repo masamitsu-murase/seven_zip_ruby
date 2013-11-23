@@ -349,20 +349,22 @@ describe SevenZipRuby do
       expect(size.sort.reverse).to eq size
     end
 
-    example "set multi_thread" do
-      time = [ false, true ].map do |multi_thread|
-        output = StringIO.new("")
-        start = nil
-        SevenZipRuby::SevenZipWriter.open(output) do |szw|
-          szw.method = "BZIP2"  # BZIP2 uses multi threads.
-          szw.multi_thread = multi_thread
-          data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
-          szw.add_buffer("hoge.txt", data * 10)
-          start = Time.now
+    if (SevenZipRubySpecHelper.processor_count > 1)
+      example "set multi_thread" do
+        time = [ false, true ].map do |multi_thread|
+          output = StringIO.new("")
+          start = nil
+          SevenZipRuby::SevenZipWriter.open(output) do |szw|
+            szw.method = "BZIP2"  # BZIP2 uses multi threads.
+            szw.multi_thread = multi_thread
+            data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
+            szw.add_buffer("hoge.txt", data * 10)
+            start = Time.now
+          end
+          next Time.now - start
         end
-        next Time.now - start
+        expect(time.sort.reverse).to eq time
       end
-      expect(time.sort.reverse).to eq time
     end
 
 

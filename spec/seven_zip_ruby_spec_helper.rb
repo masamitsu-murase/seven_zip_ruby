@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 require("fileutils")
+require("rbconfig")
 
 module SevenZipRubySpecHelper
   DETAIL_CHECK = true
@@ -73,6 +74,24 @@ module SevenZipRubySpecHelper
     def cleanup_seven_zip_file
       FileUtils.rmtree(SEVEN_ZIP_FILE) if (File.exist?(SEVEN_ZIP_FILE))
       FileUtils.rmtree(SEVEN_ZIP_PASSWORD_FILE) if (File.exist?(SEVEN_ZIP_PASSWORD_FILE))
+    end
+
+
+    def processor_count
+      return @processor_count if (@processor_count)
+
+      if (RbConfig::CONFIG["target_os"].match(/mingw|mswin/))
+        require("win32ole")
+        @processor_count = WIN32OLE.connect("winmgmts://")
+          .ExecQuery("SELECT NumberOfLogicalProcessors from Win32_Processor")
+          .to_enum(:each).map(&:NumberOfLogicalProcessors).reduce(:+)
+      elsif (File.exist?("/proc/cpuinfo"))
+        @processor_count = File.open("/proc/cpuinfo", &:read).scan(/^processor/).size
+      else
+        @processor_count = 1
+      end
+
+      return @processor_count
     end
   end
 end
