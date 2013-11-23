@@ -2,11 +2,9 @@ language: ruby
 rvm:
   - "2.0.0"
 cache:
-  directories:
-    - vendor/bundle
-  apt: true
+  - apt
 before_install:
-  - bundle install --path=vendor/bundle --without development --deployment
+  - bundle install --path=vendor/bundle
   - sudo apt-get install p7zip-full
 install: bundle exec rake build_local
 script: bundle exec rspec spec/seven_zip_ruby_spec.rb
