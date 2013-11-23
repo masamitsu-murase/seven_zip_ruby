@@ -2,6 +2,7 @@ language: ruby
 rvm:
   - "2.0.0"
 before_install:
+  - bundle install --path=bundle
   - sudo apt-get install p7zip-full
 install: bundle exec rake build_local
 script: bundle exec rspec spec/seven_zip_ruby_spec.rb
