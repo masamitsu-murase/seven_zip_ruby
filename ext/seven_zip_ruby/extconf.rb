@@ -116,8 +116,8 @@ def main
     Dir.chdir(File.expand_path("../../p7zip", __FILE__)) do
       create_p7zip_makefile(ostype)
 
-      make_success = system("make 7z")
-      raise "Filed to make p7zip" unless (make_success)
+      make_success = system("make 7zso")
+      raise "Failed to make p7zip" unless (make_success)
 
       FileUtils.mv("./bin/7z.so", "../../lib/seven_zip_ruby/7z.so")
       system("make clean")
