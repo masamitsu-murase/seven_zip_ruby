@@ -5,8 +5,8 @@ module SevenZipRuby
         new(:buffer, { name: name, data: data })
       end
 
-      def dir(name)
-        new(:dir, { name: name })
+      def dir(name, opt={})
+        new(:dir, opt.merge({ name: name }))
       end
 
       def file(name, filepath, szw)
@@ -20,7 +20,8 @@ module SevenZipRuby
       when :buffer
         initialize_buffer(param[:name], param[:data])
       when :dir
-        initialize_dir(param[:name])
+        name = param.delete(:name)
+        initialize_dir(name, param)
       when :file
         initialize_file(param[:name], param[:filepath], param[:szw])
       end
@@ -42,7 +43,7 @@ module SevenZipRuby
       @user = @group = nil
     end
 
-    def initialize_dir(name)
+    def initialize_dir(name, opt)
       @index_in_archive = nil
       @new_data = true
       @new_properties = true
@@ -54,7 +55,10 @@ module SevenZipRuby
       @size = 0
       @attrib = 0x10
       @posix_attrib = 0x00
-      @ctime = @atime = @mtime = Time.now
+      time = Time.now
+      @ctime = (opt[:ctime] || time)
+      @atime = (opt[:atime] || time)
+      @mtime = (opt[:mtime] || time)
       @user = @group = nil
     end
 

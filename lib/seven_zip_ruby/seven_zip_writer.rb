@@ -51,13 +51,13 @@ module SevenZipRuby
       directory = Pathname(directory).cleanpath
       raise ArgumentError.new("directory should be relative") if (directory.absolute?)
 
-      mkdir(directory)
+      mkdir(directory, { ctime: directory.ctime, atime: directory.atime, mtime: directory.mtime })
 
       Pathname.glob(directory.join("**").to_s) do |entry|
         if (entry.file?)
           add_file(entry)
         elsif (entry.directory?)
-          mkdir(entry)
+          mkdir(entry, { ctime: entry.ctime, atime: entry.atime, mtime: entry.mtime })
         else
           raise "#{entry} is invalid entry"
         end
@@ -67,13 +67,20 @@ module SevenZipRuby
     end
     alias add_dir add_directory
 
-    def mkdir(directory_name)
+    def mkdir(directory_name, opt={})
       path = Pathname(directory_name)
       raise ArgumentError.new("directory_name should be relative") if (path.absolute?)
+      check_option(opt, [ :ctime, :atime, :mtime ])
 
       name = path.cleanpath.to_s.encode(PATH_ENCODING)
-      add_item(UpdateInfo.dir(name))
+      add_item(UpdateInfo.dir(name, opt))
       return self
+    end
+
+
+    def check_option(opt, keys)
+      invalid_keys = opt.keys - keys
+      raise ArgumentError.new("invalid option: " + invalid_keys.join(", ")) unless (invalid_keys.empty?)
     end
 
 
