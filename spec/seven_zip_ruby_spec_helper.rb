@@ -11,6 +11,10 @@ module SevenZipRubySpecHelper
 
   SAMPLE_FILE_DIR_RELATIVE = "sample_file"
   SAMPLE_FILE_DIR = File.expand_path(SAMPLE_FILE_DIR_RELATIVE, TEMP_DIR)
+
+  EXTRACT_DIR_RELATIVE = "extract"
+  EXTRACT_DIR = File.expand_path(EXTRACT_DIR_RELATIVE, TEMP_DIR)
+
   SAMPLE_DATA = [
     { name: "ascii_file.txt", data: "ASCII Files", directory: false },
     { name: "empty_file.txt", data: "", directory: false },
@@ -34,8 +38,17 @@ module SevenZipRubySpecHelper
     end
 
 
-    def prepare
-      cleanup
+    def prepare_each
+      cleanup_each
+    end
+
+    def cleanup_each
+      FileUtils.rmtree(EXTRACT_DIR) if (File.exist?(EXTRACT_DIR))
+    end
+
+
+    def prepare_all
+      cleanup_all
 
       prepare_sample_file
       prepare_seven_zip_file
@@ -62,7 +75,7 @@ module SevenZipRubySpecHelper
     end
 
 
-    def cleanup
+    def cleanup_all
       cleanup_seven_zip_file
       cleanup_sample_file
     end

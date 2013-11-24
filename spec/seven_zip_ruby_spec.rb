@@ -3,13 +3,21 @@ require_relative("seven_zip_ruby_spec_helper")
 
 describe SevenZipRuby do
   before(:all) do
-    SevenZipRubySpecHelper.prepare
+    SevenZipRubySpecHelper.prepare_all
     # GC.stress = true
   end
 
   after(:all) do
     # GC.stress = false
-    SevenZipRubySpecHelper.cleanup
+    SevenZipRubySpecHelper.cleanup_all
+  end
+
+  before(:each) do
+    SevenZipRubySpecHelper.prepare_each
+  end
+
+  after(:each) do
+    SevenZipRubySpecHelper.cleanup_each
   end
 
 
@@ -67,6 +75,24 @@ describe SevenZipRuby do
         SevenZipRuby::SevenZipReader.open(file) do |szr|
           entries = szr.entries.select{ |i| i.file? }
           expect(szr.extract_data(entries).all?).to eq true
+        end
+      end
+    end
+
+    example "extract archive" do
+      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+        SevenZipRuby::SevenZipReader.open(file) do |szr|
+          szr.extract_all(SevenZipRubySpecHelper::EXTRACT_DIR)
+        end
+      end
+
+      Dir.chdir(SevenZipRubySpecHelper::EXTRACT_DIR) do
+        SevenZipRubySpecHelper::SAMPLE_DATA.each do |info|
+          path = Pathname(info[:name])
+          expected_path = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) + info[:name]
+          expect(path.mtime).to eq expected_path.mtime
+          expect(path.file?).to eq expected_path.file?
+          (expect(File.open(path, "rb", &:read)).to eq info[:data]) if (path.file?)
         end
       end
     end
@@ -279,11 +305,13 @@ describe SevenZipRuby do
 
           entries.each do |entry|
             entry_in_sample = SevenZipRubySpecHelper::SAMPLE_DATA.find{ |i| i[:name] == entry.path.to_s }
+            local_entry = Pathname(File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, entry_in_sample[:name]))
             if (entry_in_sample[:directory])
               expect(entry.directory?).to eq true
             else
               expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
             end
+            expect(entry.mtime).to eq local_entry.mtime
           end
         end
       end
