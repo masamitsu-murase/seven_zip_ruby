@@ -494,7 +494,8 @@ VALUE ConvertFiletimeToTime(const FILETIME &filetime)
 void ConvertTimeToFiletime(VALUE time, FILETIME *filetime)
 {
     VALUE t = rb_funcall(time, INTERN("to_i"), 0);
-    UInt64 value = NUM2ULL(t) * 10000000 + 116444736000000000ULL;
+    VALUE usec = rb_funcall(time, INTERN("usec"), 0);
+    UInt64 value = NUM2ULL(t) * 10000000 + NUM2ULL(usec) * 10 + 116444736000000000ULL;
     filetime->dwLowDateTime = (UInt32)value;
     filetime->dwHighDateTime = (UInt32)(value >> 32);
 }
