@@ -78,17 +78,27 @@ module SevenZipRubySpecHelper
 
 
     def processor_count
-      return @processor_count if (@processor_count)
+      return @processor_count unless (@processor_count.nil?)
 
       if (RbConfig::CONFIG["target_os"].match(/mingw|mswin/))
+        # Windows
         require("win32ole")
         @processor_count = WIN32OLE.connect("winmgmts://")
           .ExecQuery("SELECT NumberOfLogicalProcessors from Win32_Processor")
           .to_enum(:each).map(&:NumberOfLogicalProcessors).reduce(:+)
       elsif (File.exist?("/proc/cpuinfo"))
+        # Linux
         @processor_count = File.open("/proc/cpuinfo", &:read).scan(/^processor/).size
+      elsif (RbConfig::CONFIG["target_os"].include?("darwin"))
+        # Mac
+        begin
+          @processor_count = `sysctl hw.ncpu`.split(":").last.to_i
+        rescue
+          @processor_count = false
+        end
       else
-        @processor_count = 1
+        # Unknown
+        @processor_count = false
       end
 
       return @processor_count

@@ -349,7 +349,7 @@ describe SevenZipRuby do
       expect(size.sort.reverse).to eq size
     end
 
-    if (SevenZipRubySpecHelper.processor_count > 1)
+    if (SevenZipRubySpecHelper.processor_count && SevenZipRubySpecHelper.processor_count > 1)
       example "set multi_thread" do
         time = [ false, true ].map do |multi_thread|
           output = StringIO.new("")
