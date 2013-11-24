@@ -78,8 +78,7 @@ p stream.string
 
 * Windows
 * Linux (partially tested)
-
-Mac OSX will be supported in the later version.
+* Mac OSX (partially tested)
 
 ## More examples
 
@@ -146,7 +145,6 @@ p(Time.now - start)
 
 * Support file attributes correctly.
 * Support convenient methods.
-* Support Mac and Linux.
 * Support updating archive.
 * Support extracting rar archive.
 
