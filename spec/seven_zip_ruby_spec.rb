@@ -90,7 +90,7 @@ describe SevenZipRuby do
         SevenZipRubySpecHelper::SAMPLE_DATA.each do |info|
           path = Pathname(info[:name])
           expected_path = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) + info[:name]
-          expect([ path.mtime.to_i, path.mtime.usec ]).to eq [ expected_path.mtime.to_i, expected_path.mtime.usec ]
+          expect(path.mtime.to_i).to eq expected_path.mtime.to_i
           expect(path.file?).to eq expected_path.file?
           (expect(File.open(path, "rb", &:read)).to eq info[:data]) if (path.file?)
         end
@@ -311,7 +311,7 @@ describe SevenZipRuby do
             else
               expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
             end
-            expect([ entry.mtime.to_i, entry.mtime.usec ]).to eq [ local_entry.mtime.to_i, local_entry.mtime.usec ]
+            expect(entry.mtime.to_i).to eq local_entry.mtime.to_i
           end
         end
       end
