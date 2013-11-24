@@ -120,7 +120,7 @@ def main
       raise "Failed to make p7zip" unless (make_success)
 
       FileUtils.mv("./bin/7z.so", "../../lib/seven_zip_ruby/7z.so")
-      system("make clean")
+      system("make clean_7zso")
     end
   end
 

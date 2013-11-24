@@ -6,7 +6,7 @@ DEST_SHARE=$(DEST_HOME)/lib/p7zip
 DEST_SHARE_DOC=$(DEST_HOME)/share/doc/p7zip
 DEST_MAN=$(DEST_HOME)/man
 
-.PHONY: default all all2 7za 7zG 7zFM sfx 7zso 7z 7zr Client7z common common7z clean tar_bin depend test test_7z test_7zr test_7zG test_Client7z all_test app
+.PHONY: default all all2 7za 7zG 7zFM sfx 7zso 7z 7zr Client7z common common7z clean_7zso clean tar_bin depend test test_7z test_7zr test_7zG test_Client7z all_test app
 
 default:7za
 
@@ -85,6 +85,10 @@ common7z:common
 	cd bin ; rm -f Lang ; ln -s ../GUI/Lang .
 	cd bin ; rm -f help ; ln -s ../GUI/help .
 	$(MAKE) -C CPP/7zip/UI/FileManager       all
+
+clean_7zso:
+	$(MAKE) -C CPP/7zip/Bundles/Format7zFree clean
+	rm -fr bin
 
 clean:
 	$(MAKE) -C CPP/myWindows                 clean
