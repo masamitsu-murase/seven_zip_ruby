@@ -1,8 +1,8 @@
 module SevenZipRuby
   class UpdateInfo
     class << self
-      def buffer(name, data)
-        new(:buffer, { name: name, data: data })
+      def buffer(name, data, opt={})
+        new(:buffer, opt.merge({ name: name, data: data }))
       end
 
       def dir(name, opt={})
@@ -18,7 +18,9 @@ module SevenZipRuby
       @type = type
       case(type)
       when :buffer
-        initialize_buffer(param[:name], param[:data])
+        name = param.delete(:name)
+        data = param.delete(:data)
+        initialize_buffer(name, data, param)
       when :dir
         name = param.delete(:name)
         initialize_dir(name, param)
@@ -27,7 +29,7 @@ module SevenZipRuby
       end
     end
 
-    def initialize_buffer(name, data)
+    def initialize_buffer(name, data, opt)
       @index_in_archive = nil
       @new_data = true
       @new_properties = true
@@ -39,7 +41,10 @@ module SevenZipRuby
       @size = data.size
       @attrib = 0x20
       @posix_attrib = 0x00
-      @ctime = @atime = @mtime = Time.now
+      time = Time.now
+      @ctime = (opt[:ctime] || time)
+      @atime = (opt[:atime] || time)
+      @mtime = (opt[:mtime] || time)
       @user = @group = nil
     end
 

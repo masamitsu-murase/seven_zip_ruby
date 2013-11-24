@@ -90,7 +90,7 @@ describe SevenZipRuby do
         SevenZipRubySpecHelper::SAMPLE_DATA.each do |info|
           path = Pathname(info[:name])
           expected_path = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) + info[:name]
-          expect(path.mtime).to eq expected_path.mtime
+          expect([ path.mtime.to_i, path.mtime.usec ]).to eq [ expected_path.mtime.to_i, expected_path.mtime.usec ]
           expect(path.file?).to eq expected_path.file?
           (expect(File.open(path, "rb", &:read)).to eq info[:data]) if (path.file?)
         end
@@ -311,7 +311,7 @@ describe SevenZipRuby do
             else
               expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
             end
-            expect(entry.mtime).to eq local_entry.mtime
+            expect([ entry.mtime.to_i, entry.mtime.usec ]).to eq [ local_entry.mtime.to_i, local_entry.mtime.usec ]
           end
         end
       end
@@ -337,14 +337,15 @@ describe SevenZipRuby do
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.level = level
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
-          szw.add_buffer("hoge1.txt", data)
-          szw.add_buffer("hoge2.txt", data + data.slice(1 .. -1))
-          szw.add_buffer("hoge3.txt", data + data.reverse + data.slice(1 .. -1))
+          time = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA_TIMESTAMP
+          szw.add_buffer("hoge1.txt", data, mtime: time)
+          szw.add_buffer("hoge2.txt", data + data.slice(1 .. -1), mtime: time)
+          szw.add_buffer("hoge3.txt", data + data.reverse + data.slice(1 .. -1), mtime: time)
         end
         next output.string.size
       end
       size.each_cons(2) do |large, small|
-        expect(large - small >= -1).to eq true
+        expect(large - small >= 0).to eq true
       end
     end
 

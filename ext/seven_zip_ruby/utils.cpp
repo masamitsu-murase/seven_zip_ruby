@@ -483,19 +483,17 @@ BSTR ConvertStringToBstr(const char *str, int length)
 
 VALUE ConvertFiletimeToTime(const FILETIME &filetime)
 {
-    UInt64 time = filetime.dwLowDateTime + ((UInt64)(filetime.dwHighDateTime) << 32);
-    time /= 10;
-    time -= (unsigned long long)((1970-1601)*365.2425) * 24 * 60 * 60 * 1000 * 1000;
+    UInt64 time = filetime.dwLowDateTime + ((UInt64)(filetime.dwHighDateTime) << 32);  // 100ns
+    time -= (UInt64)((1970-1601)*365.2425) * 24 * 60 * 60 * 1000 * 1000 * 10;
 
-    return rb_funcall(rb_cTime, INTERN("at"), 2,
-                      ULL2NUM(time/(1000*1000)), ULONG2NUM((unsigned long)(time % (1000*1000))));
+    return rb_time_nano_new(time / (1000*1000*10), (time % (1000*1000*10)) * 100);
 }
 
 void ConvertTimeToFiletime(VALUE time, FILETIME *filetime)
 {
     VALUE t = rb_funcall(time, INTERN("to_i"), 0);
-    VALUE usec = rb_funcall(time, INTERN("usec"), 0);
-    UInt64 value = NUM2ULL(t) * 10000000 + NUM2ULL(usec) * 10 + 116444736000000000ULL;
+    VALUE nsec = rb_funcall(time, INTERN("nsec"), 0);
+    UInt64 value = NUM2ULL(t) * 10000000 + NUM2ULL(nsec) / 100 + 116444736000000000ULL;
     filetime->dwLowDateTime = (UInt32)value;
     filetime->dwHighDateTime = (UInt32)(value >> 32);
 }

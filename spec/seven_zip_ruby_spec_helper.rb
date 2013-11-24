@@ -23,8 +23,9 @@ module SevenZipRubySpecHelper
     { name: "directory/utf8_name®.txt", data: "日本語のファイル".force_encoding("ASCII-8BIT"), directory: false },
     { name: "empty_directory", directory: true }
   ]
-  SAMPLE_LARGE_RANDOM_DATA = (0...100000).to_a.pack("L*")
 
+  SAMPLE_LARGE_RANDOM_DATA = (0...100000).to_a.pack("L*")
+  SAMPLE_LARGE_RANDOM_DATA_TIMESTAMP = Time.utc(2013, 10, 22)
 
   SEVEN_ZIP_FILE = File.expand_path("seven_zip.7z", TEMP_DIR)
   SEVEN_ZIP_PASSWORD_FILE = File.expand_path("seven_zip_password.7z", TEMP_DIR)
