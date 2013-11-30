@@ -32,13 +32,13 @@ module SevenZipRuby
 
     def inspect
       if (@anti)
-        type = "Anti"
+        type = "anti"
       elsif (@dir)
-        type = "Dir"
+        type = "dir"
       else
-        type = "File"
+        type = "file"
       end
-      return "[#{type}: #{index}: #{path}]"
+      return "#<EntryInfo: #{index}, #{type}, #{path}>"
     end
   end
 end

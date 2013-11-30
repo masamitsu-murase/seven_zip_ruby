@@ -15,7 +15,7 @@ module SevenZipRuby
     end
 
     def inspect
-      "[ArchiveInfo: #{size}byte]"
+      "#<ArchiveInfo: #{method}, #{size}byte>"
     end
   end
 end
