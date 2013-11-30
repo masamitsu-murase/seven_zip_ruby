@@ -118,10 +118,11 @@ File.open("filename.7z", "rb") do |file|
 end
 p data
 #  => File content is shown.
+```
 
 ### Create archive manually
 
-```
+```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
     szr.add_file "entry1.txt"
