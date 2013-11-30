@@ -26,13 +26,20 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
+You can also use handy method.
+```ruby
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.extract_all(file, "path_to_dir")
+end
+```
+
 ### Show entries in archive
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
     list = szr.entries
     p list
-    # => [ "[Dir: 0: dir/subdir]", "[File: 1: dir/file.txt]", ... ]
+    # => [ "#<EntryInfo: 0, dir, dir/subdir>", "#<EntryInfo: 1, file, dir/file.txt>", ... ]
   end
 end
 ```
@@ -45,6 +52,13 @@ File.open("filename.7z", "rb") do |file|
   end
 end
 ```
+or
+```ruby
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Reader.extract_all(file, "path_to_dir", { password: "Password String" })
+end
+```
+
 
 ### Verify archive
 ```ruby
@@ -58,28 +72,22 @@ end
 ```ruby
 File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
-    szr.add_file "entry1.txt"
-    szr.mkdir "dir1"
-    data = [0, 1, 2, 3, 4].pack("C*")
-    szr.add_data data, "entry2.txt"
+    szr.add_directory("dir")
   end
 end
 ```
-
+or
 ```ruby
-stream = StringIO.new("")
-SevenZipRuby::Writer.open(stream) do |szr|
-  szr.add_file "entry1.txt"
-  szr.mkdir "dir1"
+File.open("filename.7z", "wb") do |file|
+  SevenZipRuby::Writer.add_directory(file, "dir")
 end
-p stream.string
 ```
 
 ## Supported platforms
 
 * Windows
-* Linux (partially tested)
-* Mac OSX (partially tested)
+* Linux
+* Mac OSX
 
 ## More examples
 
@@ -91,7 +99,7 @@ Extract files whose size is less than 1024.
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
     small_files = szr.entries.select{ |i| i.file? && i.size < 1024 }
-    szr.extract(small_files)
+    szr.extract(small_files, "path_to_dir")
   end
 end
 ```
@@ -109,7 +117,21 @@ File.open("filename.7z", "rb") do |file|
   end
 end
 p data
-#  => "File content. ...."
+#  => File content is shown.
+
+### Create archive manually
+
+```
+File.open("filename.7z", "rb") do |file|
+  SevenZipRuby::Writer.open(file) do |szr|
+    szr.add_file "entry1.txt"
+    szr.mkdir "dir1"
+    szr.mkdir "dir2"
+
+    data = [0, 1, 2, 3, 4].pack("C*")
+    szr.add_data data, "entry2.txt"
+  end
+end
 ```
 
 ### Set compression mode
@@ -124,28 +146,27 @@ a = StringIO.new("")
 start = Time.now
 SevenZipRuby::Writer.open(a) do |szr|
   szr.method = "BZIP2"     # Set compression method to "BZIP2"
-  szr.multi_thread = true  # Enable multi-threading mode (default)
+  szr.multi_thread = false # Disable multi-threading mode
   szr.add_data(data, "test.bin")
 end
 p(Time.now - start)
-#  => 3.607563
+#  => 11.180934
 
 a = StringIO.new("")
 start = Time.now
 SevenZipRuby::Writer.open(a) do |szr|
   szr.method = "BZIP2"     # Set compression method to "BZIP2"
-  szr.multi_thread = false # Disable multi-threading mode
+  szr.multi_thread = true  # Enable multi-threading mode (default)
   szr.add_data(data, "test.bin")
 end
 p(Time.now - start)
-#  => 11.180934  # Slower than multi-threaded compression.
+#  => 3.607563    # Faster than single-threaded compression.
 ```
 
 
 ## TODO
 
-* Support file attributes correctly.
-* Support convenient methods.
+* Support file attributes on Linux and Mac OSX.
 * Support updating archive.
 * Support extracting rar archive.
 
