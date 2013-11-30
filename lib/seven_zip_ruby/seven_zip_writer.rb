@@ -38,7 +38,7 @@ module SevenZipRuby
       return self
     end
 
-    def add_buffer(filename, data, opt={})
+    def add_data(data, filename, opt={})
       path = Pathname(filename)
       raise ArgumentError.new("filename should be relative") if (path.absolute?)
       check_option(opt, [ :ctime, :atime, :mtime ])

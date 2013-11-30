@@ -232,7 +232,7 @@ describe SevenZipRuby do
             szw.method = "BZIP2"
             szw.level = 9
             szw.multi_thread = false
-            szw.add_buffer("hoge.txt", SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 2)
+            szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 2, "hoge.txt")
           end
         end
 
@@ -251,8 +251,8 @@ describe SevenZipRuby do
       output = StringIO.new("")
       szw = SevenZipRuby::SevenZipWriter.new
       szw.open(output)
-      szw.add_buffer("hoge.txt", "This is hoge.txt.")
-      szw.add_buffer("hoge2.txt", "This is hoge2.txt.")
+      szw.add_data("This is hoge.txt content.", "hoge.txt")
+      szw.add_data("This is hoge2.txt content.", "hoge2.txt")
       szw.mkdir("hoge/hoge/hoge")
       szw.compress
       szw.close
@@ -262,8 +262,8 @@ describe SevenZipRuby do
     example "compress" do
       output = StringIO.new("")
       SevenZipRuby::SevenZipWriter.open(output) do |szw|
-        szw.add_buffer("hoge.txt", "This is hoge.txt.")
-        szw.add_buffer("hoge2.txt", "This is hoge2.txt.")
+        szw.add_data("This is hoge.txt content.", "hoge.txt")
+        szw.add_data("This is hoge2.txt content.", "hoge2.txt")
         szw.mkdir("hoge/hoge/hoge")
       end
     end
@@ -322,7 +322,7 @@ describe SevenZipRuby do
         output = StringIO.new("")
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.method = type
-          szw.add_buffer("hoge.txt", SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA)
+          szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA, "hoge.txt")
         end
 
         SevenZipRuby::SevenZipReader.open(StringIO.new(output.string)) do |szr|
@@ -338,9 +338,9 @@ describe SevenZipRuby do
           szw.level = level
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
           time = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA_TIMESTAMP
-          szw.add_buffer("hoge1.txt", data, mtime: time)
-          szw.add_buffer("hoge2.txt", data + data.slice(1 .. -1), mtime: time)
-          szw.add_buffer("hoge3.txt", data + data.reverse + data.slice(1 .. -1), mtime: time)
+          szw.add_data(data, "hoge1.txt", mtime: time)
+          szw.add_data(data + data.slice(1 .. -1), "hoge2.txt", mtime: time)
+          szw.add_data(data + data.reverse + data.slice(1 .. -1), "hoge3.txt", mtime: time)
         end
         next output.string.size
       end
@@ -355,8 +355,8 @@ describe SevenZipRuby do
         SevenZipRuby::SevenZipWriter.open(output) do |szw|
           szw.solid = solid
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
-          szw.add_buffer("hoge1.txt", data)
-          szw.add_buffer("hoge2.txt", data + data.slice(1 .. -1))
+          szw.add_data(data, "hoge1.txt")
+          szw.add_data(data + data.slice(1 .. -1), "hoge2.txt")
         end
         next output.string.size
       end
@@ -370,7 +370,7 @@ describe SevenZipRuby do
           szw.header_compression = header_compression
           data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
           10.times do |i|
-            szw.add_buffer("hoge#{i}.txt", data)
+            szw.add_data(data, "hoge#{i}.txt")
           end
         end
         next output.string.size
@@ -387,7 +387,7 @@ describe SevenZipRuby do
             szw.method = "BZIP2"  # BZIP2 uses multi threads.
             szw.multi_thread = multi_thread
             data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
-            szw.add_buffer("hoge.txt", data * 10)
+            szw.add_data(data * 10, "hoge.txt")
             start = Time.now
           end
           next Time.now - start
@@ -419,9 +419,9 @@ describe SevenZipRuby do
         expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).level = 2 }.to raise_error
       end
 
-      example "add_buffer/mkdir/compress/close before open" do
+      example "add_data/mkdir/compress/close before open" do
         szw = SevenZipRuby::SevenZipWriter.new
-        expect{ szw.add_buffer("hoge.txt", "This is hoge.txt.") }.to raise_error(SevenZipRuby::InvalidOperation)
+        expect{ szw.add_data("This is hoge.txt content.", "hoge.txt") }.to raise_error(SevenZipRuby::InvalidOperation)
 
         szw = SevenZipRuby::SevenZipWriter.new
         expect{ szw.mkdir("hoge/hoge") }.to raise_error(SevenZipRuby::InvalidOperation)
@@ -433,12 +433,12 @@ describe SevenZipRuby do
         expect{ szw.close }.to raise_error(SevenZipRuby::InvalidOperation)
       end
 
-      example "add_buffer after close" do
+      example "add_data after close" do
         output = StringIO.new("")
         szw = SevenZipRuby::SevenZipWriter.new
         szw.open(output)
         szw.close
-        expect{ szw.add_buffer("hoge.txt", "This is hoge.txt.") }.to raise_error(SevenZipRuby::InvalidOperation)
+        expect{ szw.add_data("This is hoge.txt content.", "hoge.txt") }.to raise_error(SevenZipRuby::InvalidOperation)
       end
 
     end

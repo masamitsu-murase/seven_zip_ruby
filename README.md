@@ -60,7 +60,8 @@ File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
     szr.add_file "entry1.txt"
     szr.mkdir "dir1"
-    szr.add_buffer "entry2.txt", "binary_data 123456"
+    data = [0, 1, 2, 3, 4].pack("C*")
+    szr.add_data data, "entry2.txt"
   end
 end
 ```
@@ -124,7 +125,7 @@ start = Time.now
 SevenZipRuby::Writer.open(a) do |szr|
   szr.method = "BZIP2"     # Set compression method to "BZIP2"
   szr.multi_thread = true  # Enable multi-threading mode (default)
-  szr.add_buffer("test.bin", data)
+  szr.add_data(data, "test.bin")
 end
 p(Time.now - start)
 #  => 3.607563
@@ -134,7 +135,7 @@ start = Time.now
 SevenZipRuby::Writer.open(a) do |szr|
   szr.method = "BZIP2"     # Set compression method to "BZIP2"
   szr.multi_thread = false # Disable multi-threading mode
-  szr.add_buffer("test.bin", data)
+  szr.add_data(data, "test.bin")
 end
 p(Time.now - start)
 #  => 11.180934  # Slower than multi-threaded compression.
