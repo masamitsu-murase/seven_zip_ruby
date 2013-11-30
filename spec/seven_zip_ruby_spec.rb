@@ -317,6 +317,47 @@ describe SevenZipRuby do
       end
     end
 
+    example "add_directory singleton version" do
+      dir = File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, "..")
+      dirname = File.basename(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
+      Dir.chdir(dir) do
+        output = StringIO.new("")
+        SevenZipRuby::SevenZipWriter.add_directory(output, dirname)
+
+        output2 = StringIO.new("")
+        SevenZipRuby::SevenZipWriter.open(output2) do |szr|
+          szr.add_directory(dirname)
+        end
+
+        expect(output.string).to eq output2.string
+      end
+    end
+
+    example "use as option" do
+      output = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output) do |szw|
+        szw.add_directory(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, as: "test/dir")
+      end
+
+      output.rewind
+      SevenZipRuby::SevenZipReader.open(output) do |szr|
+        base_dir = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
+        entries = szr.entries
+        files = Pathname.glob(base_dir.to_s + "/**/*") +[ base_dir ]
+
+        expect(entries.size).to eq files.size
+
+        expect(entries.all?{ |i| i.path.to_s.start_with?("test/dir") }).to eq true
+
+        entries.each do |entry|
+          file = files.find do |i|
+            i.relative_path_from(base_dir) == entry.path.relative_path_from(Pathname("test/dir"))
+          end
+          expect(file.directory?).to eq entry.directory?
+        end
+      end
+    end
+
     example "use various methods" do
       [ "COPY", "DEFLATE", "LZMA", "LZMA2", "BZIP2", "PPMd" ].each do |type|
         output = StringIO.new("")

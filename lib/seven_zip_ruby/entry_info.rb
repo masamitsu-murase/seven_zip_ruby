@@ -38,7 +38,8 @@ module SevenZipRuby
       else
         type = "file"
       end
-      return "#<EntryInfo: #{index}, #{type}, #{path}>"
+      str = path.to_s.encode(Encoding::ASCII, invalid: :replace, undef: :replace, replace: "?")
+      return "#<EntryInfo: #{index}, #{type}, #{str}>"
     end
   end
 end
