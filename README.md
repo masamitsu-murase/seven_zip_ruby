@@ -18,6 +18,7 @@ The interfaces may be changed.
 If you have any comments about interface API, let me know please.
 
 ### Extract archive
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
@@ -27,6 +28,7 @@ end
 ```
 
 You can also use handy method.
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.extract_all(file, "path_to_dir")
@@ -34,6 +36,7 @@ end
 ```
 
 ### Show entries in archive
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file) do |szr|
@@ -45,6 +48,7 @@ end
 ```
 
 ### Extract encrypted archive
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.open(file, { password: "Password String" }) do |szr|
@@ -53,6 +57,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 or
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.extract_all(file, "path_to_dir", { password: "Password String" })
@@ -61,6 +66,7 @@ end
 
 
 ### Verify archive
+
 ```ruby
 File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.verify(file)
@@ -69,6 +75,7 @@ end
 ```
 
 ### Compress files
+
 ```ruby
 File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.open(file) do |szr|
@@ -77,6 +84,7 @@ File.open("filename.7z", "wb") do |file|
 end
 ```
 or
+
 ```ruby
 File.open("filename.7z", "wb") do |file|
   SevenZipRuby::Writer.add_directory(file, "dir")
@@ -174,4 +182,9 @@ p(Time.now - start)
 
 ## License
 LGPL and unRAR license. Please refer to LICENSE.txt.
+
+## Releases
+
+* 1.0.0  
+  Initial release
 
