@@ -1,6 +1,6 @@
 # SevenZipRuby ![Logo](https://raw.github.com/masamitsu-murase/seven_zip_ruby/master/resources/seven_zip_ruby_logo.png)
 
-[![Build Status](https://travis-ci.org/masamitsu-murase/seven_zip_ruby.png?branch=master)](https://travis-ci.org/masamitsu-murase/seven_zip_ruby)
+[![Build Status](https://travis-ci.org/masamitsu-murase/seven_zip_ruby.png?branch=master)](https://travis-ci.org/masamitsu-murase/seven_zip_ruby) [![Gem Version](https://badge.fury.io/rb/seven_zip_ruby.png)](http://badge.fury.io/rb/seven_zip_ruby)
 
 This is a Ruby gem library to handle [7-Zip](http://www.7-zip.org) archives.
 
