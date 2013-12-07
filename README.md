@@ -12,11 +12,6 @@ This extension calls the native library, 7z.dll or 7z.so, internally and it is i
 
 ## Examples
 
-**This is a beta version.**  
-The interfaces may be changed.
-
-If you have any comments about interface API, let me know please.
-
 ### Extract archive
 
 ```ruby
