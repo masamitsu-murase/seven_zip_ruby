@@ -1,37 +1,98 @@
 require("stringio")
 
 module SevenZipRuby
+
   # SevenZipReader reads 7zip archive and extract it.
+  #
+  # == Examples
+  # === Get archive information
+  #   # Archive property
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.open(file) do |szr|
+  #       info = szr.archive_property  # Return ArchiveInfo instance.
+  #     end
+  #   end
+  #
+  #   # Entry information
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.open(file) do |szr|
+  #       entries = szr.entries
+  #     end
+  #   end
+  #
+  # === Extract 7zip archive.
+  #   # Extract archive
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.open(file) do |szr|
+  #       szr.extract(:all, "path_to_dir")
+  #     end
+  #   end
+  #
+  #   # Extract encrypted archive
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.open(file, password: "Password String") do |szr|
+  #       szr.extract(:all, "path_to_dir")
+  #     end
+  #   end
+  #
+  #   # Extract only small files
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.open(file) do |szr|
+  #       small_files = szr.entries.select{ |i| i.file? && i.size < 1024 }
+  #       szr.extract(small_files, "path_to_dir")
+  #     end
+  #   end
+  #
+  #   # Extract archive on memory
+  #   archive_data = "....."
+  #   stream = StringIO.new(archive_data)
+  #   SevenZipRuby::Reader.open(stream) do |szr|
+  #     entry_data = szr.extract_data(:all)
+  #     # => [ "data", ... ]
+  #   end
+  #
+  # === Verify archive
+  #   File.open("filename.7z", "rb") do |file|
+  #     SevenZipRuby::Reader.verify(file)
+  #     # => true/false
+  #   end
   class SevenZipReader
     class << self
-      # Open 7zip archive.
+      # Open 7zip archive to read.
       #
       # ==== Args
-      # +stream+ :: Input stream of 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
+      # +stream+ :: Input stream to read 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
       # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
       #
       # ==== Examples
-      #  # Open archive
-      #  File.open("filename.7z", "rb") do |file|
-      #    SevenZipRuby::Reader.open(file) do |szr|
-      #      # Read and extract archive.
-      #    end
-      #  end
+      #   # Open archive
+      #   File.open("filename.7z", "rb") do |file|
+      #     SevenZipRuby::SevenZipReader.open(file) do |szr|
+      #       # Read and extract archive.
+      #     end
+      #   end
       #
-      #  # Open encrypted archive
-      #  File.open("filename.7z", "rb") do |file|
-      #    SevenZipRuby::Reader.open(file, password: "PasswordOfArchive") do |szr|
-      #      # Read and extract archive.
-      #    end
-      #  end
+      #   # Open encrypted archive
+      #   File.open("filename.7z", "rb") do |file|
+      #     SevenZipRuby::SevenZipReader.open(file, password: "PasswordOfArchive") do |szr|
+      #       # Read and extract archive.
+      #     end
+      #   end
       #
-      #  # Open without block.
-      #  File.open("filename.7z", "rb") do |file|
-      #    szr = SevenZipRuby::Reader.open(file)
-      #      # Read and extract archive.
-      #    szr.close
-      #  end
-      def open(stream, param = {}, &block)
+      #   # Open without block.
+      #   File.open("filename.7z", "rb") do |file|
+      #     szr = SevenZipRuby::SevenZipReader.open(file)
+      #     # Read and extract archive.
+      #     szr.close
+      #   end
+      #
+      #   # Open archive on memory.
+      #   archive_data = "....."
+      #   stream = StringIO.new(archive_data)
+      #   SevenZipRuby::Reader.open(stream) do |szr|
+      #     szr.extract(:all, "path_to_dir")
+      #   end
+      def open(stream, param = {}, &block)  # :yield: szr
         szr = self.new
         szr.open(stream, param)
         if (block)
@@ -45,18 +106,22 @@ module SevenZipRuby
       # Open and extract 7zip archive.
       #
       # ==== Args
-      # +stream+ :: Input stream of 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
+      # +stream+ :: Input stream to read 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed, such as <tt>File</tt> and <tt>StringIO</tt>.
       # +index+ :: Index of the entry to extract. Integer or Array of Integer can be specified.
       # +dir+ :: Directory to extract the archive to.
       # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
       #
       # ==== Examples
       #   File.open("filename.7z", "rb") do |file|
-      #     SevenZipRuby::Reader.extract(file, 1, "path_to_dir")
+      #     SevenZipRuby::SevenZipReader.extract(file, 1, "path_to_dir")
       #   end
       #
       #   File.open("filename.7z", "rb") do |file|
-      #     SevenZipRuby::Reader.extract(file, [1, 2, 4], "path_to_dir", password: "PasswordOfArchive")
+      #     SevenZipRuby::SevenZipReader.extract(file, [1, 2, 4], "path_to_dir", password: "PasswordOfArchive")
+      #   end
+      #
+      #   File.open("filename.7z", "rb") do |file|
+      #     SevenZipRuby::SevenZipReader.extract(file, :all, "path_to_dir")
       #   end
       def extract(stream, index, dir = ".", param = {})
         password = { password: param.delete(:password) }
@@ -68,13 +133,13 @@ module SevenZipRuby
       # Open and extract 7zip archive.
       #
       # ==== Args
-      # +stream+ :: Input stream of 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
+      # +stream+ :: Input stream to read 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
       # +dir+ :: Directory to extract the archive to.
       # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
       #
       # ==== Examples
       #   File.open("filename.7z", "rb") do |file|
-      #     SevenZipRuby::Reader.extract_all(file, "path_to_dir")
+      #     SevenZipRuby::SevenZipReader.extract_all(file, "path_to_dir")
       #   end
       def extract_all(stream, dir = ".", param = {})
         password = { password: param.delete(:password) }
@@ -86,12 +151,12 @@ module SevenZipRuby
       # Open and verify 7zip archive.
       #
       # ==== Args
-      # +stream+ :: Input stream of 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
+      # +stream+ :: Input stream to read 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
       # +opt+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
       #
       # ==== Examples
       #   File.open("filename.7z", "rb") do |file|
-      #     ret = SevenZipRuby::Reader.verify(file)
+      #     ret = SevenZipRuby::SevenZipReader.verify(file)
       #     # => true/false
       #   end
       def verify(stream, opt = {})
@@ -105,12 +170,12 @@ module SevenZipRuby
     # Open 7zip archive.
     #
     # ==== Args
-    # +stream+ :: Input stream of 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
+    # +stream+ :: Input stream to read 7zip archive. <tt>stream.seek</tt> and <tt>stream.read</tt> are needed.
     # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     szr = SevenZipRuby::Reader.new
+    #     szr = SevenZipRuby::SevenZipReader.new
     #     szr.open(file)
     #     # ...
     #     szr.close
@@ -122,63 +187,6 @@ module SevenZipRuby
       return self
     end
 
-
-    # :nodoc:
-    def file_proc(base_dir)
-      base_dir = base_dir.to_s
-      return Proc.new do |type, arg|
-        case(type)
-        when :stream
-          ret = nil
-          if (arg.anti?)
-            arg.path.rmtree if (arg.path.exist?)
-          elsif (arg.file?)
-            path = arg.path.expand_path(base_dir)
-            path.parent.mkpath
-            ret = File.open(path, "wb")
-          else
-            path = arg.path.expand_path(base_dir)
-            path.mkpath
-            set_file_attribute(path.to_s, arg.attrib) if (arg.attrib)
-            path.utime(arg.atime || path.atime, arg.mtime || path.mtime)
-          end
-          next ret
-
-        when :result
-          arg[:stream].close
-          unless (arg[:info].anti?)
-            path = arg[:info].path.expand_path(base_dir)
-            set_file_attribute(path.to_s, arg[:info].attrib) if (arg[:info].attrib)
-            path.utime(arg[:info].atime || path.atime, arg[:info].mtime || path.mtime)
-          end
-        end
-      end
-    end
-    private :file_proc
-
-    # :nodoc:
-    def data_proc(output, idx_prj)
-      return Proc.new do |type, arg|
-        case(type)
-        when :stream
-          ret = (arg.has_data? ? StringIO.new("".b) : nil)
-          unless (arg.has_data?)
-            output[idx_prj[arg.index]] = nil
-          end
-          next ret
-
-        when :result
-          arg[:stream].close
-          if (arg[:info].has_data?)
-            output[idx_prj[arg[:info].index]] = arg[:stream].string
-          end
-
-        end
-      end
-    end
-    private :data_proc
-
-
     # Verify 7zip archive.
     #
     # ==== Args
@@ -186,7 +194,7 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       ret = szr.verify
     #       # => true/false
     #     end
@@ -207,7 +215,7 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       ret = szr.verify_detail
     #       # => [ true, :DataError, :DataError, ... ]
     #     end
@@ -228,8 +236,14 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       szr.extract([ 1, 2, 4 ], "path_to_dir")
+    #     end
+    #   end
+    #
+    #   File.open("filename.7z", "rb") do |file|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
+    #       szr.extract(:all, "path_to_dir")
     #     end
     #   end
     def extract(index, dir = ".")
@@ -253,7 +267,7 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       szr.extract_all("path_to_dir")
     #     end
     #   end
@@ -269,13 +283,13 @@ module SevenZipRuby
     # ==== Examples
     #   # Extract files whose size is less than 1024.
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       szr.extract_if("path_to_dir") do |entry|
     #         next entry.size < 1024
     #       end
     #     end
     #   end
-    def extract_if(dir = ".", &block)
+    def extract_if(dir = ".", &block)  # :yield: entry_info
       extract(entries.select(&block).map(&:index), dir)
     end
 
@@ -286,7 +300,7 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       small_entries = szr.entries.select{ |i| i.size < 1024 }
     #
     #       data_list = szr.extract_data(small_entries)
@@ -295,7 +309,7 @@ module SevenZipRuby
     #   end
     #
     #   File.open("filename.7z", "rb") do |file|
-    #     SevenZipRuby::Reader.open(file) do |szr|
+    #     SevenZipRuby::SevenZipReader.open(file) do |szr|
     #       largest_entry = szr.entries.max_by{ |i| i.file? ? i.size : 0 }
     #
     #       data_list = szr.extract_data(largest_entry)
@@ -338,8 +352,63 @@ module SevenZipRuby
 
       end
     end
+
+
+    def file_proc(base_dir)  # :nodoc:
+      base_dir = base_dir.to_s
+      return Proc.new do |type, arg|
+        case(type)
+        when :stream
+          ret = nil
+          if (arg.anti?)
+            arg.path.rmtree if (arg.path.exist?)
+          elsif (arg.file?)
+            path = arg.path.expand_path(base_dir)
+            path.parent.mkpath
+            ret = File.open(path, "wb")
+          else
+            path = arg.path.expand_path(base_dir)
+            path.mkpath
+            set_file_attribute(path.to_s, arg.attrib) if (arg.attrib)
+            path.utime(arg.atime || path.atime, arg.mtime || path.mtime)
+          end
+          next ret
+
+        when :result
+          arg[:stream].close
+          unless (arg[:info].anti?)
+            path = arg[:info].path.expand_path(base_dir)
+            set_file_attribute(path.to_s, arg[:info].attrib) if (arg[:info].attrib)
+            path.utime(arg[:info].atime || path.atime, arg[:info].mtime || path.mtime)
+          end
+        end
+      end
+    end
+    private :file_proc
+
+    def data_proc(output, idx_prj)  # :nodoc:
+      return Proc.new do |type, arg|
+        case(type)
+        when :stream
+          ret = (arg.has_data? ? StringIO.new("".b) : nil)
+          unless (arg.has_data?)
+            output[idx_prj[arg.index]] = nil
+          end
+          next ret
+
+        when :result
+          arg[:stream].close
+          if (arg[:info].has_data?)
+            output[idx_prj[arg[:info].index]] = arg[:stream].string
+          end
+
+        end
+      end
+    end
+    private :data_proc
   end
 
 
+  # +Reader+ is an alias of +SevenZipReader+.
   Reader = SevenZipReader
 end
