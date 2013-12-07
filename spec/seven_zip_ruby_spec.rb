@@ -158,6 +158,16 @@ describe SevenZipRuby do
         end
       end
 
+      example "invalid password" do
+        File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
+          expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error
+        end
+
+        File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
+          expect{ SevenZipRuby::Reader.open(file, password: "a"){ |szr| szr.extract_data(1) } }.to raise_error
+        end
+      end
+
       example "raise error in open" do
         error = StandardError.new
 

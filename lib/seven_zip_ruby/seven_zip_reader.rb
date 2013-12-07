@@ -376,6 +376,8 @@ module SevenZipRuby
 
         when :result
           arg[:stream].close
+          raise InvalidArchive.new("Corrupted archive or invalid password") unless (arg[:success])
+
           unless (arg[:info].anti?)
             path = arg[:info].path.expand_path(base_dir)
             set_file_attribute(path.to_s, arg[:info].attrib) if (arg[:info].attrib)
@@ -398,6 +400,8 @@ module SevenZipRuby
 
         when :result
           arg[:stream].close
+          raise InvalidArchive.new("Corrupted archive or invalid password") unless (arg[:success])
+
           if (arg[:info].has_data?)
             output[idx_prj[arg[:info].index]] = arg[:stream].string
           end
