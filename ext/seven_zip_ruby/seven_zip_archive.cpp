@@ -1602,14 +1602,19 @@ extern "C" void Init_seven_zip_archive(void)
     rb_define_method_ext(cls, "level", WRITER_FUNC2(level, 0));
     rb_define_method_ext(cls, "solid=", WRITER_FUNC2(setSolid, 1));
     rb_define_method_ext(cls, "solid", WRITER_FUNC2(solid, 0));
+    rb_define_method_ext(cls, "solid?", WRITER_FUNC2(solid, 0));
     rb_define_method_ext(cls, "header_compression=", WRITER_FUNC2(setHeaderCompression, 1));
     rb_define_method_ext(cls, "header_compression", WRITER_FUNC2(headerCompression, 0));
+    rb_define_method_ext(cls, "header_compression?", WRITER_FUNC2(headerCompression, 0));
     rb_define_method_ext(cls, "header_encryption=", WRITER_FUNC2(setHeaderEncryption, 1));
     rb_define_method_ext(cls, "header_encryption", WRITER_FUNC2(headerEncryption, 0));
+    rb_define_method_ext(cls, "header_encryption?", WRITER_FUNC2(headerEncryption, 0));
     rb_define_method_ext(cls, "multi_threading=", WRITER_FUNC2(setMultiThreading, 1));
     rb_define_method_ext(cls, "multi_thread=", WRITER_FUNC2(setMultiThreading, 1));
     rb_define_method_ext(cls, "multi_threading", WRITER_FUNC2(multiThreading, 0));
+    rb_define_method_ext(cls, "multi_threading?", WRITER_FUNC2(multiThreading, 0));
     rb_define_method_ext(cls, "multi_thread", WRITER_FUNC2(multiThreading, 0));
+    rb_define_method_ext(cls, "multi_thread?", WRITER_FUNC2(multiThreading, 0));
 
 #undef WRITER_FUNC2
 #undef WRITER_FUNC
