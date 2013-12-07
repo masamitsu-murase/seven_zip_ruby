@@ -756,6 +756,10 @@ VALUE ArchiveWriter::addItem(VALUE item)
 
 VALUE ArchiveWriter::compress(VALUE callback_proc)
 {
+    if (m_state == STATE_COMPRESSED){
+        return Qnil;
+    }
+
     checkStateToBeginOperation(STATE_OPENED);
     prepareAction();
     EventLoopThreadExecuter te(this);

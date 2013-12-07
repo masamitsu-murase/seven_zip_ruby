@@ -265,6 +265,7 @@ describe SevenZipRuby do
         szw.add_data("This is hoge.txt content.", "hoge.txt")
         szw.add_data("This is hoge2.txt content.", "hoge2.txt")
         szw.mkdir("hoge/hoge/hoge")
+        szw.compress
       end
     end
 
