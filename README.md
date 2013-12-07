@@ -180,6 +180,8 @@ LGPL and unRAR license. Please refer to LICENSE.txt.
 
 ## Releases
 
+* 1.1.0
+  Raise error when wrong password is specified.
 * 1.0.0  
-  Initial release
+  Initial release.
 
