@@ -1,4 +1,5 @@
 require "fileutils"
+require "tempfile"
 require "bundler/gem_tasks"
 
 BINARY_FILES = [ "seven_zip_archive.so", "seven_zip_archive.bundle" ]
@@ -32,7 +33,18 @@ end
 task :build_binary do
   Dir.chdir "ext/seven_zip_ruby" do
     FileUtils.rmtree BINARY_FILES
-    sh "ruby extconf.rb"
+
+    Tempfile.open([ "site", ".rb" ], Dir.pwd) do |temp|
+      temp.puts <<"EOS"
+require('rbconfig')
+RbConfig::CONFIG['sitearchdir'] = "../../lib"
+EOS
+      temp.flush
+
+      sh "ruby -r#{File.expand_path(temp.path)} extconf.rb"
+      temp.unlink
+    end
+
     sh "#{MAKE}"
   end
 end
