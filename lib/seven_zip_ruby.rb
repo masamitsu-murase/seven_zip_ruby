@@ -2,9 +2,9 @@
 
 require("seven_zip_ruby/version")
 
-external_lib = [ "7z.so", "7z.dll" ]
+external_lib = (RUBY_PLATFORM.downcase.match(/mswin|mingw/) ? "7z.dll" : "7z.so")
 dir = $:.find do |i|
-  next external_lib.any?{ |so| File.file?(File.join(i, "seven_zip_ruby", so)) }
+  next File.file?(File.join(i, "seven_zip_ruby", external_lib))
 end
 raise "Failed to find 7z.dll or 7z.so" unless (dir)
 
@@ -20,5 +20,3 @@ require("seven_zip_ruby/update_info")
 require("seven_zip_ruby/entry_info")
 require("seven_zip_ruby/exception")
 
-module SevenZipRuby
-end
