@@ -58,14 +58,12 @@ describe SevenZipRuby do
     end
 
     example "extract data directly from archive" do
-      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
-        SevenZipRuby::SevenZipReader.open(file) do |szr|
-          entries = szr.entries
+      SevenZipRuby::SevenZipReader.open_file(SevenZipRubySpecHelper::SEVEN_ZIP_FILE) do |szr|
+        entries = szr.entries
 
-          SevenZipRubySpecHelper::SAMPLE_DATA.each do |sample|
-            entry = entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath.to_s }
-            expect(szr.extract_data(entry.index)).to eq sample[:data]
-          end
+        SevenZipRubySpecHelper::SAMPLE_DATA.each do |sample|
+          entry = entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath.to_s }
+          expect(szr.extract_data(entry.index)).to eq sample[:data]
         end
       end
     end
@@ -274,7 +272,9 @@ describe SevenZipRuby do
       szw.mkdir("hoge/hoge/hoge")
       szw.compress
       szw.close
-      output.close
+
+      output.rewind
+      expect(SevenZipRuby::SevenZipReader.verify(output)).to eq true
     end
 
     example "compress" do
@@ -284,6 +284,24 @@ describe SevenZipRuby do
         szw.add_data("This is hoge2.txt content.", "hoge2.txt")
         szw.mkdir("hoge/hoge/hoge")
         szw.compress
+      end
+
+      output.rewind
+      expect(SevenZipRuby::SevenZipReader.verify(output)).to eq true
+    end
+
+    example "open_file" do
+      FileUtils.mkpath(SevenZipRubySpecHelper::EXTRACT_DIR)
+      Dir.chdir(SevenZipRubySpecHelper::EXTRACT_DIR) do
+        filename = "hoge.7z"
+
+        SevenZipRuby::SevenZipWriter.open_file(filename) do |szw|
+          szw.add_data("This is a sample.", "hoge.txt")
+        end
+
+        File.open(filename, "rb") do |f|
+          expect(SevenZipRuby::SevenZipReader.verify(f)).to eq true
+        end
       end
     end
 

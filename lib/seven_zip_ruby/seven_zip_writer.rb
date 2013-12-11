@@ -83,6 +83,18 @@ module SevenZipRuby
         end
       end
 
+      def open_file(filename, param = {}, &block)  # :yield: szw
+        szw = self.new
+        szw.open_file(filename, param)
+        if (block)
+          block.call(szw)
+          szw.compress
+          szw.close
+        else
+          szw
+        end
+      end
+
       # Create 7zip archive which includes the specified directory recursively.
       #
       # ==== Args
@@ -140,6 +152,20 @@ module SevenZipRuby
       stream.set_encoding(Encoding::ASCII_8BIT)
       open_impl(stream, param)
       return self
+    end
+
+    def open_file(filename, param = {})
+      @stream = File.open(filename, "wb")
+      self.open(@stream, param)
+      return self
+    end
+
+    def close
+      close_impl
+      if (@stream)
+        @stream.close
+        @stream = nil
+      end
     end
 
     # Compress and output data to archive file.

@@ -103,6 +103,19 @@ module SevenZipRuby
         end
       end
 
+
+      def open_file(filename, param = {}, &block)  # :yield: szr
+        szr = self.new
+        szr.open_file(filename, param)
+        if (block)
+          block.call(szr)
+          szr.close
+        else
+          szr
+        end
+      end
+
+
       # Open and extract 7zip archive.
       #
       # ==== Args
@@ -185,6 +198,20 @@ module SevenZipRuby
       stream.set_encoding(Encoding::ASCII_8BIT)
       open_impl(stream, param)
       return self
+    end
+
+    def open_file(filename, param = {})
+      @stream = File.open(filename, "rb")
+      self.open(@stream, param)
+      return self
+    end
+
+    def close
+      close_impl
+      if (@stream)
+        @stream.close
+        @stream = nil
+      end
     end
 
     # Verify 7zip archive.

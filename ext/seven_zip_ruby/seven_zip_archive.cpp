@@ -1570,7 +1570,7 @@ extern "C" void Init_seven_zip_archive(void)
 
     cls = rb_define_wrapped_cpp_class_under<SevenZipReader>(mod, "SevenZipReader", rb_cObject);
     rb_define_method_ext(cls, "open_impl", READER_FUNC(open, 2));
-    rb_define_method_ext(cls, "close", READER_FUNC(close, 0));
+    rb_define_method_ext(cls, "close_impl", READER_FUNC(close, 0));
     rb_define_method_ext(cls, "entry_num", READER_FUNC(entryNum, 0));
     rb_define_method_ext(cls, "extract_impl", READER_FUNC(extract, 2));
     rb_define_method_ext(cls, "extract_files_impl", READER_FUNC(extractFiles, 2));
@@ -1593,7 +1593,7 @@ extern "C" void Init_seven_zip_archive(void)
     rb_define_method_ext(cls, "open_impl", WRITER_FUNC(open, 2));
     rb_define_method_ext(cls, "add_item", WRITER_FUNC(addItem, 1));
     rb_define_method_ext(cls, "compress_impl", WRITER_FUNC(compress, 1));
-    rb_define_method_ext(cls, "close", WRITER_FUNC(close, 0));
+    rb_define_method_ext(cls, "close_impl", WRITER_FUNC(close, 0));
     rb_define_method_ext(cls, "get_file_attribute", WRITER_FUNC(getFileAttribute, 1));
 
     rb_define_method_ext(cls, "method=", WRITER_FUNC2(setMethod, 1));
