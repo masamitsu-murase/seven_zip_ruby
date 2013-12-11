@@ -32,7 +32,7 @@ describe SevenZipRuby do
         expect(entries.size).to be SevenZipRubySpecHelper::SAMPLE_DATA.size
 
         SevenZipRubySpecHelper::SAMPLE_DATA.each do |sample|
-          entry = entries.select{ |i| i.path == Pathname(sample[:name]).cleanpath }
+          entry = entries.select{ |i| i.path == Pathname(sample[:name]).cleanpath.to_s }
           expect(entry.size).to be 1
 
           entry = entry[0]
@@ -63,7 +63,7 @@ describe SevenZipRuby do
           entries = szr.entries
 
           SevenZipRubySpecHelper::SAMPLE_DATA.each do |sample|
-            entry = entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath }
+            entry = entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath.to_s }
             expect(szr.extract_data(entry.index)).to eq sample[:data]
           end
         end
@@ -105,7 +105,7 @@ describe SevenZipRuby do
         th = Thread.new do
           szr = SevenZipRuby::SevenZipReader.open(file)
           sample = SevenZipRubySpecHelper::SAMPLE_DATA.sample
-          entry = szr.entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath }
+          entry = szr.entries.find{ |i| i.path == Pathname(sample[:name]).cleanpath.to_s }
         end
         th.join
 
@@ -354,15 +354,15 @@ describe SevenZipRuby do
       SevenZipRuby::SevenZipReader.open(output) do |szr|
         base_dir = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
         entries = szr.entries
-        files = Pathname.glob(base_dir.to_s + "/**/*") +[ base_dir ]
+        files = Pathname.glob(base_dir.to_s + "/**/*") + [ base_dir ]
 
         expect(entries.size).to eq files.size
 
-        expect(entries.all?{ |i| i.path.to_s.start_with?("test/dir") }).to eq true
+        expect(entries.all?{ |i| i.path.start_with?("test/dir") }).to eq true
 
         entries.each do |entry|
           file = files.find do |i|
-            i.relative_path_from(base_dir) == entry.path.relative_path_from(Pathname("test/dir"))
+            i.relative_path_from(base_dir) == Pathname(entry.path).relative_path_from(Pathname("test/dir"))
           end
           expect(file.directory?).to eq entry.directory?
         end

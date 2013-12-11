@@ -360,14 +360,15 @@ module SevenZipRuby
         case(type)
         when :stream
           ret = nil
+          arg_path = Pathname(arg.path)
           if (arg.anti?)
-            arg.path.rmtree if (arg.path.exist?)
+            arg_path.rmtree if (arg_path.exist?)
           elsif (arg.file?)
-            path = arg.path.expand_path(base_dir)
+            path = arg_path.expand_path(base_dir)
             path.parent.mkpath
             ret = File.open(path, "wb")
           else
-            path = arg.path.expand_path(base_dir)
+            path = arg_path.expand_path(base_dir)
             path.mkpath
             set_file_attribute(path.to_s, arg.attrib) if (arg.attrib)
             path.utime(arg.atime || path.atime, arg.mtime || path.mtime)
@@ -379,7 +380,7 @@ module SevenZipRuby
           raise InvalidArchive.new("Corrupted archive or invalid password") unless (arg[:success])
 
           unless (arg[:info].anti?)
-            path = arg[:info].path.expand_path(base_dir)
+            path = Pathname(arg[:info].path).expand_path(base_dir)
             set_file_attribute(path.to_s, arg[:info].attrib) if (arg[:info].attrib)
             path.utime(arg[:info].atime || path.atime, arg[:info].mtime || path.mtime)
           end
