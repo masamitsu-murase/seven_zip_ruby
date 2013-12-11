@@ -1,6 +1,10 @@
 language: ruby
 rvm:
   - "2.0.0"
+  - "rbx-2.2.1"
+matrix:
+  allow_failures:
+    - rvm: "rbx-2.2.1"
 cache:
   - apt
 before_install:
