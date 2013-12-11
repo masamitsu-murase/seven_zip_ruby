@@ -22,6 +22,14 @@ module SevenZipRuby
   #     end
   #   end
   #
+  #   # Compress files 2
+  #   SevenZipRuby::SevenZipWriter.open_file("filename.7z") do |szw|
+  #     szw.add_directory("test_dir")
+  #     Dir.chdir("parent_dir_of_test.txt") do
+  #       szw.add_file("test.txt")
+  #     end
+  #   end
+  #
   #   stream = StringIO.new("")
   #   SevenZipRuby::SevenZipWriter.open(stream) do |szw|
   #     szw.add_file("test.txt")
@@ -83,6 +91,26 @@ module SevenZipRuby
         end
       end
 
+      # Open 7zip archive file.
+      #
+      # ==== Args
+      # +filename+ :: 7zip archive filename.
+      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      #
+      # ==== Examples
+      #   # Open archive
+      #   SevenZipRuby::SevenZipWriter.open_file("filename.7z") do |szw|
+      #     # Create archive.
+      #     # ...
+      #     # You don't have to call szw.compress. Of cource, you may call it.
+      #     # szw.compress
+      #   end
+      #
+      #   # Open without block.
+      #   szw = SevenZipRuby::SevenZipWriter.open_file("filename.7z")
+      #   # Create archive.
+      #   szw.compress  # Compress must be called in this case.
+      #   szw.close
       def open_file(filename, param = {}, &block)  # :yield: szw
         szw = self.new
         szw.open_file(filename, param)
@@ -143,7 +171,8 @@ module SevenZipRuby
     #
     # ==== Examples
     #   File.open("filename.7z", "wb") do |file|
-    #     szw = SevenZipRuby::SevenZipWriter.open(file)
+    #     szw = SevenZipRuby::SevenZipWriter.new
+    #     szw.open(file)
     #     # ...
     #     szw.compress
     #     szw.close
@@ -154,6 +183,18 @@ module SevenZipRuby
       return self
     end
 
+    # Open 7zip archive file to create.
+    #
+    # ==== Args
+    # +filename+ :: 7zip archive filename.
+    # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+    #
+    # ==== Examples
+    #   szw = SevenZipRuby::SevenZipWriter.new
+    #   szw.open_file("filename.7z")
+    #   # ...
+    #   szw.compress
+    #   szw.close
     def open_file(filename, param = {})
       @stream = File.open(filename, "wb")
       self.open(@stream, param)

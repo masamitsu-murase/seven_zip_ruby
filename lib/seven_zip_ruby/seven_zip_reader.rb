@@ -28,6 +28,11 @@ module SevenZipRuby
   #     end
   #   end
   #
+  #   # Extract archive 2
+  #   SevenZipRuby::Reader.open_file("filename.7z") do |szr|
+  #     szr.extract(:all, "path_to_dir")
+  #   end
+  #
   #   # Extract encrypted archive
   #   File.open("filename.7z", "rb") do |file|
   #     SevenZipRuby::Reader.open(file, password: "Password String") do |szr|
@@ -104,6 +109,27 @@ module SevenZipRuby
       end
 
 
+      # Open 7zip archive to read.
+      #
+      # ==== Args
+      # +filename+ :: Filename of 7zip archive.
+      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      #
+      # ==== Examples
+      #   # Open archive
+      #   SevenZipRuby::SevenZipReader.open_file("filename.7z") do |szr|
+      #     # Read and extract archive.
+      #   end
+      #
+      #   # Open encrypted archive
+      #   SevenZipRuby::SevenZipReader.open_file("filename.7z", password: "PasswordOfArchive") do |szr|
+      #     # Read and extract archive.
+      #   end
+      #
+      #   # Open without block.
+      #   szr = SevenZipRuby::SevenZipReader.open_file("filename.7z")
+      #   # Read and extract archive.
+      #   szr.close
       def open_file(filename, param = {}, &block)  # :yield: szr
         szr = self.new
         szr.open_file(filename, param)
@@ -200,6 +226,17 @@ module SevenZipRuby
       return self
     end
 
+    # Open 7zip archive file.
+    #
+    # ==== Args
+    # +filename+ :: Filename of 7zip archive.
+    # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+    #
+    # ==== Examples
+    #   szr = SevenZipRuby::SevenZipReader.new
+    #   szr.open_file("filename.7z")
+    #   # ...
+    #   szr.close
     def open_file(filename, param = {})
       @stream = File.open(filename, "rb")
       self.open(@stream, param)
