@@ -158,6 +158,14 @@ describe SevenZipRuby do
         end
       end
 
+      example "invalid index" do
+        File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+          SevenZipRuby::SevenZipReader.open(file) do |szr|
+            expect{ szr.extract_data(nil) }.to raise_error (ArgumentError)
+          end
+        end
+      end
+
       example "invalid password" do
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
           expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error

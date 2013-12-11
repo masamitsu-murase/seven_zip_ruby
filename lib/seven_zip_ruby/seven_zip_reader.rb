@@ -252,9 +252,11 @@ module SevenZipRuby
       when Symbol
         raise SevenZipError.new("Argument error") unless (index == :all)
         return extract_all(path)
-      when Array
+      when Enumerable
         index_list = index.map(&:to_i).sort.uniq
         extract_files_impl(index_list, file_proc(path))
+      when nil
+        raise ArgumentError.new("Invalid parameter index")
       else
         extract_impl(index.to_i, file_proc(path))
       end
@@ -328,13 +330,16 @@ module SevenZipRuby
         extract_all_impl(data_proc(ret, idx_prj))
         return ret
 
-      when Array
+      when Enumerable
         index_list = index.map(&:to_i)
         idx_prj = Hash[*(index_list.each_with_index.map{ |idx, i| [ idx, i ] }.flatten)]
 
         ret = []
         extract_files_impl(index_list, data_proc(ret, idx_prj))
         return ret
+
+      when nil
+        raise ArgumentError.new("Invalid parameter index")
 
       else
         index = index.to_i
