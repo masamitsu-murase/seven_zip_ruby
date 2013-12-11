@@ -6,8 +6,8 @@ require("rbconfig")
 module SevenZipRubySpecHelper
   DETAIL_CHECK = true
 
-  BASE_DIR = __dir__
-  TEMP_DIR = File.expand_path("../tmp", __dir__)
+  BASE_DIR = File.expand_path("..", __FILE__)
+  TEMP_DIR = File.expand_path("../../tmp", __FILE__)
 
   SAMPLE_FILE_DIR_RELATIVE = "sample_file"
   SAMPLE_FILE_DIR = File.expand_path(SAMPLE_FILE_DIR_RELATIVE, TEMP_DIR)

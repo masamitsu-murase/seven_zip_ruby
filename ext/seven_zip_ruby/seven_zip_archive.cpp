@@ -548,7 +548,6 @@ VALUE ArchiveReader::testAll(VALUE detail)
         VALUE crcError = ID2SYM(INTERN("CrcError"));
 
         VALUE ary = rb_ary_new2(num);
-        rb_ary_resize(ary, m_test_result.size());
         for (unsigned int i=0; i<m_test_result.size(); i++){
             VALUE v;
             switch(m_test_result[i]){
@@ -568,7 +567,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
                 v = Qnil;
                 break;
             }
-            RARRAY_PTR(ary)[i] = v;
+            rb_ary_store(ary, (long)i, v);
         }
         return ary;
     }else{
@@ -999,7 +998,7 @@ VALUE SevenZipWriter::method()
 
 VALUE SevenZipWriter::setLevel(VALUE level)
 {
-    level = rb_check_to_int(level);
+    level = rb_check_to_integer(level, "to_int");
     if (NIL_P(level)){
         throw RubyCppUtil::RubyException(rb_exc_new2(rb_eArgError, "level should be Integer"));
     }
