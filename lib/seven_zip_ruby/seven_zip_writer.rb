@@ -163,6 +163,8 @@ module SevenZipRuby
       end
     end
 
+    undef initialize_copy, clone, dup
+
     # Open 7zip archive to create.
     #
     # ==== Args
