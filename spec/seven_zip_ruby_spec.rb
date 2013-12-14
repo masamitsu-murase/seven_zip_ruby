@@ -241,19 +241,11 @@ describe SevenZipRuby do
 
         sleep 1
         expect{ th.kill }.not_to raise_error  # Thread can be killed.
+      end
 
-
-        th = Thread.start do
-          SevenZipRuby::SevenZipWriter.open(output) do |szw|
-            szw.method = "BZIP2"
-            szw.level = 9
-            szw.multi_thread = false
-            szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 2, "hoge.txt")
-          end
-        end
-
-        sleep 0.1  # Highly dependes on CPU speed...
-        expect{ th.kill }.not_to raise_error # Thread can be killed.
+      example "clone and dup cannot be called." do
+        expect{ SevenZipRuby::SevenZipReader.new.clone }.to raise_error
+        expect{ SevenZipRuby::SevenZipReader.new.dup }.to raise_error
       end
 
     end
@@ -517,6 +509,34 @@ describe SevenZipRuby do
         szw.open(output)
         szw.close
         expect{ szw.add_data("This is hoge.txt content.", "hoge.txt") }.to raise_error(SevenZipRuby::InvalidOperation)
+      end
+
+      example "clone and dup cannot be called." do
+        expect{ SevenZipRuby::SevenZipWriter.new.clone }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error
+      end
+
+      example "kill thread" do
+        prc = lambda do
+          output = StringIO.new("")
+          SevenZipRuby::SevenZipWriter.open(output) do |szw|
+            szw.method = "BZIP2"
+            szw.level = 9
+            szw.multi_thread = true
+            szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 3, "hoge.txt")
+          end
+        end
+
+        start = Time.now
+        th = Thread.start{ prc.call }
+        th.join
+        diff = Time.now - start
+
+        10.times do
+          th = Thread.start{ prc.call }
+          sleep(rand * diff)
+          expect{ th.kill }.not_to raise_error   # Thread can be killed.
+        end
       end
 
     end
