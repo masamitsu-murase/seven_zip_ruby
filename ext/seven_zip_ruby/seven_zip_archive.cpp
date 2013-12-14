@@ -199,8 +199,8 @@ void ArchiveBase::terminateEventLoopThread()
 
 ////////////////////////////////////////////////////////////////
 ArchiveReader::ArchiveReader(const GUID &format_guid)
-     : m_rb_callback_proc(Qnil), m_rb_out_stream(Qnil), m_rb_in_stream(Qnil),
-       m_processing_index((UInt32)(Int32)-1),
+     : m_rb_callback_proc(Qnil), m_rb_out_stream(Qnil),
+       m_processing_index((UInt32)(Int32)-1), m_rb_in_stream(Qnil),
        m_format_guid(format_guid),
        m_password_specified(false),
        m_state(STATE_INITIAL)
@@ -1337,6 +1337,9 @@ STDMETHODIMP ArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PRO
             break;
         }
     });
+    if (!ret){
+        return E_FAIL;
+    }
 
     return S_OK;
 }

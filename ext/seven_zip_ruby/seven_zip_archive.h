@@ -25,7 +25,9 @@
 
 
 #include <ruby.h>
+#ifdef HAVE_RUBY_THREAD_H
 #include <ruby/thread.h>
+#endif
 
 #include <CPP/Common/MyCom.h>
 #include <CPP/Windows/PropVariant.h>
@@ -36,6 +38,21 @@
 #include "mutex.h"
 #include "util_common.h"
 
+
+#ifdef NO_RB_THREAD_CALL_WITHOUT_GVL
+inline VALUE rb_thread_call_without_gvl(void *(*func)(void *data), void *data1,
+                                        rb_unblock_function_t *ubf, void *data2)
+{
+    typedef VALUE (*func_t)(void *);
+
+    return rb_thread_blocking_region((func_t)func, data1, ubf, data2);
+}
+#endif
+
+// For old compiler
+#ifdef NO_NULLPTR
+#define nullptr NULL
+#endif
 
 namespace SevenZip
 {

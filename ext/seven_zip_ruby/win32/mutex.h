@@ -121,8 +121,8 @@ class ConditionVariable
   private:
     HANDLE m_signal_event;
     HANDLE m_broadcast_event;
-    unsigned int m_waiters_count;
     Mutex m_waiters_count_mutex;
+    unsigned int m_waiters_count;
 };
 
 }

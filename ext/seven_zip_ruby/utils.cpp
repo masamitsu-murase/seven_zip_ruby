@@ -500,7 +500,6 @@ void ConvertTimeToFiletime(VALUE time, FILETIME *filetime)
 
 VALUE ConvertPropToValue(const PROPVARIANT &prop)
 {
-    VALUE ret;
     switch(prop.vt){
       case VT_EMPTY:
       case VT_NULL:

@@ -66,7 +66,6 @@ def sample_cpp_source
 #include <iostream>
 
 #include <ruby.h>
-#include <ruby/thread.h>
 
 void test()
 {
@@ -89,11 +88,49 @@ void test()
 EOS
 end
 
+def sample_for_rb_thread_call_without_gvl(have_ruby_thread_h)
+  header = "#include <ruby.h>\n"
+  header += "#include <ruby/thread.h>\n" if (have_ruby_thread_h)
+  body = <<'EOS'
+
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+    printf("%p\n", rb_thread_call_without_gvl);
+    return 0;
+}
+EOS
+  return header + body
+end
+
+def sample_for_nullptr
+  return <<'EOS'
+#include <stdio.h>
+int main(int argc, char *argv[])
+{
+    printf("%p\n", nullptr);
+    return 0;
+}
+EOS
+end
+
 def main
+  base_flag = ""
+
+  th_h = have_header("ruby/thread.h")
+
+  unless (try_compile(sample_for_rb_thread_call_without_gvl(th_h)))
+    base_flag += " -DNO_RB_THREAD_CALL_WITHOUT_GVL"
+  end
+  unless (try_compile(sample_for_nullptr))
+    base_flag += " -DNO_NULLPTR"
+  end
+
   if (RUBY_PLATFORM.include?("mswin"))
     # mswin32
     $LIBS = "oleaut32.lib"
-    $CPPFLAGS = "/I.. /EHsc /DNDEBUG"
+    $CPPFLAGS = "/I.. /EHsc /DNDEBUG #{base_flag} "
   elsif (RUBY_PLATFORM.include?("mingw"))
     # MinGW
     $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
@@ -103,14 +140,14 @@ def main
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG "
+    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG  #{base_flag} "
   else
     cpp0x_flag = [ "", "-std=c++11", "-std=gnu++11", "-std=c++0x", "-std=gnu++0x" ].find do |opt|
       next (try_compile(sample_cpp_source, "#{opt} -x c++ ") || try_compile(sample_cpp_source, "#{opt} "))
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. -I../CPP/include_windows -I../CPP #{cpp0x_flag} -DNDEBUG "
+    $CPPFLAGS = "-I.. -I../CPP/include_windows -I../CPP #{cpp0x_flag} -DNDEBUG #{base_flag} "
 
 
     ostype = check_ostype
