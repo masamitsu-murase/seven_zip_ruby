@@ -1,5 +1,6 @@
 *.rbc
 *.o
+*.obj
 *.so
 *.bundle
 *.bak
