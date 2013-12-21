@@ -23,6 +23,12 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
+  if (RUBY_ENGINE == "rbx")
+    spec.add_development_dependency "rubysl"
+    spec.add_development_dependency "rubysl-singleton"
+    spec.add_development_dependency "rubysl-abbrev"
+    spec.add_development_dependency "rubysl-irb"
+  end
 
   spec.extensions << "ext/seven_zip_ruby/extconf.rb"
 end
