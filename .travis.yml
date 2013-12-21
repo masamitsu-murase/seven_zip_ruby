@@ -2,7 +2,7 @@ language: ruby
 rvm:
   - "2.0.0"
   - "2.1.0-preview2"
-  - "rbx"
+  - "rbx-2.1.0"
 matrix:
   allow_failures:
     - rvm: "2.1.0-preview2"

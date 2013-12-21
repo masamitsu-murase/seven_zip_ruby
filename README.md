@@ -86,11 +86,18 @@ File.open("filename.7z", "wb") do |file|
 end
 ```
 
-## Supported platforms
+## Supported environment
+
+SevenZipRuby supports the following platforms.
 
 * Windows
 * Linux
 * Mac OSX
+
+SevenZipRuby supports the following Ruby engines on each platform.
+
+* MRI 2.0 and later
+* Rubinius 2.1 and later
 
 ## More examples
 
