@@ -9,6 +9,7 @@ module SevenZipRuby
 
     attr_reader :index, :path, :method, :size, :pack_size, :ctime, :atime, :mtime, :attrib, :crc
     alias to_i index
+    alias crc32 crc
 
     def directory?
       return @dir
