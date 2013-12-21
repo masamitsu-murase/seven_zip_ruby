@@ -127,16 +127,6 @@ void ArchiveBase::startEventLoopThread()
     rb_thread_create(RUBY_METHOD_FUNC(staticRubyEventLoop), this);
 }
 
-void ArchiveBase::cancelAction(void *p)
-{
-    if (!p){
-        return;
-    }
-
-    ArchiveBase *self = reinterpret_cast<ArchiveBase*>(p);
-    self->cancelAction();
-}
-
 void ArchiveBase::cancelAction()
 {
     setErrorState();

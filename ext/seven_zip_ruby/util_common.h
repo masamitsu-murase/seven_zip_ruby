@@ -8,6 +8,8 @@
 #include <ruby.h>
 
 extern "C" VALUE rubyCppUtilFunctionForProtect(VALUE p);
+extern "C" void *rubyCppUtilFunction1(void *p);
+extern "C" void rubyCppUtilFunction2(void *p);
 
 namespace RubyCppUtil
 {

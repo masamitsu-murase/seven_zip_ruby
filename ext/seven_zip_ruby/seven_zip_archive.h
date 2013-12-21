@@ -125,30 +125,23 @@ class ArchiveBase
     void rubyEventLoop();
     static VALUE staticRubyEventLoop(void *p);
     bool runRubyAction(RubyAction action);
-    void finishRubyAction();
-    static void cancelAction(void *p);
-    void cancelAction();
     static VALUE runProtectedRubyAction(VALUE p);
-
-    template<typename T>
-      void runNativeFunc(T func);
-    template<typename T, typename U>
-      bool runNativeFuncProtect(T func, U cancel);
-    template<typename T>
-      static void *staticRunFunctor(void *p);
-    template<typename T>
-      static void staticRunFunctor2(void *p);
-    template<typename T>
-      static VALUE staticRunFunctorForProtect(VALUE p);
 
   protected:
     void mark();
     void prepareAction();
 
+    template<typename T>
+      void runNativeFunc(T func);
+    template<typename T, typename U>
+      bool runNativeFuncProtect(T func, U cancel);
+
   private:
     void startEventLoopThread();
     void terminateEventLoopThread();
+    void finishRubyAction();
     bool runRubyActionImpl(RubyAction *action);
+    void cancelAction();
     virtual void setErrorState() = 0;
 
 
@@ -168,17 +161,18 @@ class ArchiveBase
 template<typename T>
 void ArchiveBase::runNativeFunc(T func)
 {
-    void *(*functor)(void *);
-    functor = staticRunFunctor<T>;
-
     typedef std::function<void ()> func_type;
+
+    func_type functor = func;
+    func_type cancel = [&](){ cancelAction(); };
+
     func_type protected_func = [&](){
-        rb_thread_call_without_gvl(functor, reinterpret_cast<void*>(&func),
-                                   cancelAction, reinterpret_cast<void*>(this));
+        rb_thread_call_without_gvl(rubyCppUtilFunction1, reinterpret_cast<void*>(&functor),
+                                   rubyCppUtilFunction2, reinterpret_cast<void*>(&cancel));
     };
 
     int state = 0;
-    rb_protect(staticRunFunctorForProtect<func_type>, reinterpret_cast<VALUE>(&protected_func), &state);
+    rb_protect(rubyCppUtilFunctionForProtect, reinterpret_cast<VALUE>(&protected_func), &state);
     if (state){
         throw RubyCppUtil::RubyException(std::string("Interrupted"));
     }
@@ -187,44 +181,19 @@ void ArchiveBase::runNativeFunc(T func)
 template<typename T, typename U>
 bool ArchiveBase::runNativeFuncProtect(T func, U cancel)
 {
-    void *(*functor)(void *);
-    void (*functor2)(void *);
-    functor = staticRunFunctor<T>;
-    functor2 = staticRunFunctor2<U>;
-
     typedef std::function<void ()> func_type;
+
+    func_type functor1 = func;
+    func_type functor2 = cancel;
+
     func_type protected_func = [&](){
-        rb_thread_call_without_gvl(functor, reinterpret_cast<void*>(&func),
-                                   functor2, reinterpret_cast<void*>(&cancel));
+        rb_thread_call_without_gvl(rubyCppUtilFunction1, reinterpret_cast<void*>(&functor1),
+                                   rubyCppUtilFunction2, reinterpret_cast<void*>(&functor2));
     };
 
     int state = 0;
-    rb_protect(staticRunFunctorForProtect<func_type>, reinterpret_cast<VALUE>(&protected_func), &state);
+    rb_protect(rubyCppUtilFunctionForProtect, reinterpret_cast<VALUE>(&protected_func), &state);
     return (state == 0);
-}
-
-template<typename T>
-void *ArchiveBase::staticRunFunctor(void *p)
-{
-    T *t = reinterpret_cast<T*>(p);
-    (*t)();
-    return 0;
-}
-
-template<typename T>
-void ArchiveBase::staticRunFunctor2(void *p)
-{
-    T *t = reinterpret_cast<T*>(p);
-    (*t)();
-    return;
-}
-
-template<typename T>
-VALUE ArchiveBase::staticRunFunctorForProtect(VALUE p)
-{
-    T *t = reinterpret_cast<T*>(p);
-    (*t)();
-    return Qnil;
 }
 
 class ArchiveReader : public ArchiveBase
