@@ -96,8 +96,8 @@ SevenZipRuby supports the following platforms.
 
 SevenZipRuby supports the following Ruby engines on each platform.
 
-* MRI 2.0 and later
-* Rubinius 2.1 and later
+* MRI 2.0.0 and later
+* Rubinius 2.2.1 and later
 
 ## More examples
 
