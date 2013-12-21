@@ -180,7 +180,7 @@ void ArchiveBase::runNativeFunc(T func)
     int state = 0;
     rb_protect(staticRunFunctorForProtect<func_type>, reinterpret_cast<VALUE>(&protected_func), &state);
     if (state){
-        throw RubyCppUtil::RubyException("Interrupted");
+        throw RubyCppUtil::RubyException(std::string("Interrupted"));
     }
 }
 

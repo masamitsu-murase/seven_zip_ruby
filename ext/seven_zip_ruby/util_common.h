@@ -7,9 +7,10 @@
 
 #include <ruby.h>
 
+extern "C" VALUE rubyCppUtilFunctionForProtect(VALUE p);
+
 namespace RubyCppUtil
 {
-
 
 class RubyException
 {
@@ -32,6 +33,23 @@ class RubyException
   private:
     VALUE m_exc;
 };
+
+
+template<typename T>
+void runRubyFunction(T func)
+{
+    std::function<void ()> function = func;
+    int state = 0;
+    rb_protect(rubyCppUtilFunctionForProtect, reinterpret_cast<VALUE>(&function), &state);
+
+    if (state){
+        VALUE exception = rb_gv_get("$!");
+        if (!NIL_P(exception)){
+            throw RubyException(exception);
+        }
+        throw RubyException(std::string("Unknown exception"));
+    }
+}
 
 
 template<typename T, VALUE (T::*func)()>

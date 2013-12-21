@@ -18,6 +18,8 @@
 namespace SevenZip
 {
 
+using namespace RubyCppUtil;
+
 
 typedef UINT32 (WINAPI * CreateObjectFunc)(
     const GUID *clsID,
@@ -258,7 +260,10 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
     m_rb_out_stream = Qnil;
     m_rb_entry_info_list.clear();
 
-    VALUE password = rb_hash_aref(param, ID2SYM(INTERN("password")));
+    VALUE password;
+    runRubyFunction([&](){
+        password = rb_hash_aref(param, ID2SYM(INTERN("password")));
+    });
     if (NIL_P(password)){
         m_password_specified = false;
     }else{
@@ -365,13 +370,17 @@ VALUE ArchiveReader::getArchiveProperty()
 
     checkState(STATE_OPENED, "getArchiveProperty error");
 
-    VALUE archive_info = rb_const_get(gSevenZipModule, INTERN("ArchiveInfo"));
-    ID new_id = INTERN("new");
+    VALUE ret;
     VALUE value_list[size];
-    for (unsigned int i=0; i<size; i++){
-        value_list[i] = ConvertPropToValue(variant_list[i]);
-    }
-    return rb_funcall2(archive_info, new_id, size, value_list);
+    runRubyFunction([&](){
+        VALUE archive_info = rb_const_get(gSevenZipModule, INTERN("ArchiveInfo"));
+        ID new_id = INTERN("new");
+        for (unsigned int i=0; i<size; i++){
+            value_list[i] = ConvertPropToValue(variant_list[i]);
+        }
+        ret = rb_funcall2(archive_info, new_id, size, value_list);
+    });
+    return ret;
 }
 
 VALUE ArchiveReader::getEntryInfo(VALUE index)
@@ -384,7 +393,10 @@ VALUE ArchiveReader::getEntryInfo(VALUE index)
 
     checkState(STATE_OPENED, "getEntryInfo error");
 
-    UInt32 idx = NUM2ULONG(index);
+    UInt32 idx;
+    runRubyFunction([&](){
+        idx = NUM2ULONG(index);
+    });
     return entryInfo(idx);
 }
 
@@ -407,7 +419,11 @@ VALUE ArchiveReader::getAllEntryInfo()
 
     checkState(STATE_OPENED, "getAllEntryInfo error");
 
-    return rb_ary_new4(m_rb_entry_info_list.size(), &m_rb_entry_info_list[0]);
+    VALUE ret;
+    runRubyFunction([&](){
+        ret = rb_ary_new4(m_rb_entry_info_list.size(), &m_rb_entry_info_list[0]);
+    });
+    return ret;
 }
 
 VALUE ArchiveReader::setFileAttribute(VALUE path, VALUE attrib)
@@ -433,7 +449,10 @@ VALUE ArchiveReader::extract(VALUE index, VALUE callback_proc)
 
     fillEntryInfo();
 
-    UInt32 i = NUM2ULONG(index);
+    UInt32 i;
+    runRubyFunction([&](){
+        i = NUM2ULONG(index);
+    });
     HRESULT ret;
     runNativeFunc([&](){
         ArchiveExtractCallback *extract_callback = createArchiveExtractCallback();
@@ -541,34 +560,37 @@ VALUE ArchiveReader::testAll(VALUE detail)
     }
 
     if (RTEST(detail)){
-        using namespace NArchive::NExtract::NOperationResult;
+        VALUE ary;
+        runRubyFunction([&](){
+            using namespace NArchive::NExtract::NOperationResult;
 
-        VALUE unsupportedMethod = ID2SYM(INTERN("UnsupportedMethod"));
-        VALUE dataError = ID2SYM(INTERN("DataError"));
-        VALUE crcError = ID2SYM(INTERN("CrcError"));
+            VALUE unsupportedMethod = ID2SYM(INTERN("UnsupportedMethod"));
+            VALUE dataError = ID2SYM(INTERN("DataError"));
+            VALUE crcError = ID2SYM(INTERN("CrcError"));
 
-        VALUE ary = rb_ary_new2(num);
-        for (unsigned int i=0; i<m_test_result.size(); i++){
-            VALUE v;
-            switch(m_test_result[i]){
-              case kOK:
-                v = Qtrue;
-                break;
-              case kUnSupportedMethod:
-                v = unsupportedMethod;
-                break;
-              case kDataError:
-                v = dataError;
-                break;
-              case kCRCError:
-                v = crcError;
-                break;
-              default:
-                v = Qnil;
-                break;
+            ary = rb_ary_new2(num);
+            for (unsigned int i=0; i<m_test_result.size(); i++){
+                VALUE v;
+                switch(m_test_result[i]){
+                  case kOK:
+                    v = Qtrue;
+                    break;
+                  case kUnSupportedMethod:
+                    v = unsupportedMethod;
+                    break;
+                  case kDataError:
+                    v = dataError;
+                    break;
+                  case kCRCError:
+                    v = crcError;
+                    break;
+                  default:
+                    v = Qnil;
+                    break;
+                }
+                rb_ary_store(ary, (long)i, v);
             }
-            rb_ary_store(ary, (long)i, v);
-        }
+        });
         return ary;
     }else{
         using namespace NArchive::NExtract::NOperationResult;
@@ -642,17 +664,19 @@ void ArchiveReader::fillEntryInfo()
         throw RubyCppUtil::RubyException("Cannot get property of items");
     }
 
-    VALUE entry_info = rb_const_get(gSevenZipModule, INTERN("EntryInfo"));
-    ID new_id = INTERN("new");
     m_rb_entry_info_list.resize(variant_list.size(), Qnil);
-    for (UInt32 i=0; i<m_rb_entry_info_list.size(); i++){
-        VALUE value_list[size + 1];
-        value_list[0] = ULONG2NUM(i);
-        for (unsigned int j=0; j<size; j++){
-            value_list[j+1] = ConvertPropToValue(variant_list[i][j]);
+    VALUE value_list[size + 1];
+    runRubyFunction([&](){
+        VALUE entry_info = rb_const_get(gSevenZipModule, INTERN("EntryInfo"));
+        ID new_id = INTERN("new");
+        for (UInt32 i=0; i<m_rb_entry_info_list.size(); i++){
+            value_list[0] = ULONG2NUM(i);
+            for (unsigned int j=0; j<size; j++){
+                value_list[j+1] = ConvertPropToValue(variant_list[i][j]);
+            }
+            m_rb_entry_info_list[i] = rb_funcall2(entry_info, new_id, size + 1, value_list);
         }
-        m_rb_entry_info_list[i] = rb_funcall2(entry_info, new_id, size + 1, value_list);
-    }
+    });
 }
 
 void ArchiveReader::mark()
@@ -727,7 +751,10 @@ VALUE ArchiveWriter::open(VALUE out_stream, VALUE param)
     m_rb_in_stream = Qnil;
     std::vector<VALUE>().swap(m_rb_update_list);
 
-    VALUE password = rb_hash_aref(param, ID2SYM(INTERN("password")));
+    VALUE password;
+    runRubyFunction([&](){
+        password = rb_hash_aref(param, ID2SYM(INTERN("password")));
+    });
     if (NIL_P(password)){
         m_password_specified = false;
     }else{
