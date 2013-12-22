@@ -139,6 +139,7 @@ class ArchiveBase
   private:
     void startEventLoopThread();
     void terminateEventLoopThread();
+    void killEventLoopThread();
     void finishRubyAction();
     bool runRubyActionImpl(RubyAction *action);
     void cancelAction();
@@ -149,10 +150,10 @@ class ArchiveBase
     static RubyAction ACTION_END;
 
   private:
-    RubyActionTuple *m_action_tuple;
+    RubyActionTuple * volatile m_action_tuple;
     Mutex m_action_mutex;
     ConditionVariable m_action_cond_var;
-    bool m_event_loop_running;
+    volatile bool m_event_loop_running;
 
   protected:
     RubyActionResult m_action_result;

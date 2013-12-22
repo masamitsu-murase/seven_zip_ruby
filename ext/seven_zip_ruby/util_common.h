@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <functional>
 #include <utility>
+#include <string>
 
 #include <ruby.h>
 

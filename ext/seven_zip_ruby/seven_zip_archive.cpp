@@ -56,7 +56,7 @@ void ArchiveBase::rubyEventLoop()
         m_action_mutex.unlock();
 
         RubyActionTuple end_tuple = std::make_pair(&ACTION_END, false);
-        RubyActionTuple *action_tuple = nullptr;
+        RubyActionTuple * volatile action_tuple = nullptr;
 
         bool success = runNativeFuncProtect([&](){
             MutexLocker locker(&m_action_mutex);
@@ -97,6 +97,12 @@ void ArchiveBase::rubyEventLoop()
 
         m_action_mutex.lock();
         m_event_loop_running = event_loop_running;
+        // if (m_action_tuple && m_action_tuple != &end_tuple && m_action_tuple != action_tuple){
+        //     // Someone overrode m_action_tuple.
+        //     // It might be killEventLoopThread. Otherwise, it might a bug.
+        //     // Therefore, terminate event loop for safety.
+        //     m_event_loop_running = false;
+        // }
         m_action_tuple = nullptr;
         m_action_cond_var.broadcast();
     }
@@ -129,7 +135,19 @@ void ArchiveBase::startEventLoopThread()
 
 void ArchiveBase::cancelAction()
 {
+//    killEventLoopThread();
     setErrorState();
+}
+
+void ArchiveBase::killEventLoopThread()
+{
+    MutexLocker locker(&m_action_mutex);
+    if (m_event_loop_running){
+        static RubyActionTuple end_tuple;
+        end_tuple = std::make_pair(&ACTION_END, false);
+        m_action_tuple = &end_tuple;  // override.
+        m_action_cond_var.broadcast();
+    }
 }
 
 bool ArchiveBase::runRubyActionImpl(RubyAction *action)
@@ -1110,11 +1128,19 @@ ArchiveOpenCallback::ArchiveOpenCallback(ArchiveReader *archive, const std::stri
 
 STDMETHODIMP ArchiveOpenCallback::SetTotal(const UInt64 *files, const UInt64 *bytes)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
+    if (m_archive->isErrorState()){
+        return E_ABORT;
+    }
     return S_OK;
 }
 
 STDMETHODIMP ArchiveOpenCallback::SetCompleted(const UInt64 *files, const UInt64 *bytes)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
+    if (m_archive->isErrorState()){
+        return E_ABORT;
+    }
     return S_OK;
 }
 
@@ -1144,6 +1170,10 @@ ArchiveExtractCallback::ArchiveExtractCallback(ArchiveReader *archive, const std
 
 STDMETHODIMP ArchiveExtractCallback::SetTotal(UInt64 size)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
+    if (m_archive->isErrorState()){
+        return E_ABORT;
+    }
     return S_OK;
 }
 
@@ -1151,7 +1181,7 @@ STDMETHODIMP ArchiveExtractCallback::SetCompleted(const UInt64 *completeValue)
 {
     // This function is called periodically, so use this function as a check function of interrupt.
     if (m_archive->isErrorState()){
-        return E_FAIL;
+        return E_ABORT;
     }
     return S_OK;
 }
@@ -1259,13 +1289,18 @@ ArchiveUpdateCallback::ArchiveUpdateCallback(ArchiveWriter *archive, const std::
 
 STDMETHODIMP ArchiveUpdateCallback::SetTotal(UInt64 size)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
+    if (m_archive->isErrorState()){
+        return E_ABORT;
+    }
     return S_OK;
 }
 
 STDMETHODIMP ArchiveUpdateCallback::SetCompleted(const UInt64 *completeValue)
 {
+    // This function is called periodically, so use this function as a check function of interrupt.
     if (m_archive->isErrorState()){
-        return E_FAIL;
+        return E_ABORT;
     }
     return S_OK;
 }
@@ -1469,6 +1504,9 @@ STDMETHODIMP InStream::Read(void *data, UInt32 size, UInt32 *processedSize)
         }
     });
     if (!ret){
+        if (processedSize){
+            *processedSize = 0;
+        }
         return E_FAIL;
     }
 
@@ -1495,6 +1533,16 @@ STDMETHODIMP OutStream::Write(const void *data, UInt32 size, UInt32 *processedSi
         }
     });
     if (!ret){
+        if (processedSize){
+            *processedSize = 0;
+        }
+        // When killEventLoopThread is called in cancelAction
+        // return S_OK even if error occurs.
+        //
+        // Detail:
+        //  It seems that BZip2Encoder has a bug.
+        //  If Write method returns E_FAIL, some Events are not set in that file
+        //  because OutBuffer throws an exception in Encoder->WriteBytes.
         return E_FAIL;
     }
 
