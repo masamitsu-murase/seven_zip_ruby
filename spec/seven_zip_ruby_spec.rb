@@ -524,26 +524,32 @@ describe SevenZipRuby do
         expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error
       end
 
-      example "kill thread" do
-        prc = lambda do
-          output = StringIO.new("")
-          SevenZipRuby::SevenZipWriter.open(output) do |szw|
-            szw.method = "BZIP2"
-            szw.level = 9
-            szw.multi_thread = true
-            szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 3, "hoge.txt")
+      if (RUBY_ENGINE == "ruby")
+        # It seems that Rubinius has the different way to handle error.
+        # Therefore, it sometimes fails to kill SevenZipRuby thread.
+        example "kill thread" do
+          [ "LZMA", "PPMd", "BZIP2" ].each do |method|
+            prc = lambda do
+              output = StringIO.new("")
+              SevenZipRuby::SevenZipWriter.open(output) do |szw|
+                szw.method = method
+                szw.level = 9
+                szw.multi_thread = true
+                szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA * 3, "hoge.txt")
+              end
+            end
+
+            start = Time.now
+            th = Thread.start{ prc.call }
+            th.join
+            diff = Time.now - start
+
+            10.times do
+              th = Thread.start{ prc.call }
+              sleep(rand * diff)
+              expect{ th.kill }.not_to raise_error   # Thread can be killed.
+            end
           end
-        end
-
-        start = Time.now
-        th = Thread.start{ prc.call }
-        th.join
-        diff = Time.now - start
-
-        10.times do
-          th = Thread.start{ prc.call }
-          sleep(rand * diff)
-          expect{ th.kill }.not_to raise_error   # Thread can be killed.
         end
       end
 
