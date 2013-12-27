@@ -9,7 +9,12 @@ end
 raise "Failed to find 7z.dll or 7z.so" unless (dir)
 
 Dir.chdir(File.join(dir, "seven_zip_ruby"))do
-  require("seven_zip_ruby/seven_zip_archive")
+  begin
+    version = RUBY_VERSION.match(/\d+\.\d+/)
+    require("seven_zip_ruby/#{version}/seven_zip_archive")
+  rescue
+    require("seven_zip_ruby/seven_zip_archive")
+  end
 end
 raise "Failed to initialize SevenZipRuby" unless (defined?(SevenZipRuby::SevenZipReader))
 
