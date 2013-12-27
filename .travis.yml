@@ -8,6 +8,8 @@ matrix:
   allow_failures:
     - rvm: "rbx"
     - rvm: "ruby-head"
+notifications:
+  email: false
 cache:
   - apt
 before_install:
