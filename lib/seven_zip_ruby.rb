@@ -12,7 +12,7 @@ Dir.chdir(File.join(dir, "seven_zip_ruby"))do
   begin
     version = RUBY_VERSION.match(/\d+\.\d+/)
     require("seven_zip_ruby/#{version}/seven_zip_archive")
-  rescue
+  rescue LoadError
     require("seven_zip_ruby/seven_zip_archive")
   end
 end
