@@ -409,7 +409,7 @@ VALUE rb_define_wrapped_cpp_class(const char *name, VALUE super)
 
     VALUE cls = rb_define_class(name, super);
     rb_define_alloc_func(cls, alloc);
-    rb_define_method(cls, "initialize", RUBY_METHOD_FUNC(init), 0);
+    rb_define_private_method(cls, "initialize", RUBY_METHOD_FUNC(init), 0);
     return cls;
 }
 
@@ -425,7 +425,7 @@ VALUE rb_define_wrapped_cpp_class_under(VALUE outer, const char *name, VALUE sup
 
     VALUE cls = rb_define_class_under(outer, name, super);
     rb_define_alloc_func(cls, alloc);
-    rb_define_method(cls, "initialize", RUBY_METHOD_FUNC(init), 0);
+    rb_define_private_method(cls, "initialize", RUBY_METHOD_FUNC(init), 0);
     return cls;
 }
 
