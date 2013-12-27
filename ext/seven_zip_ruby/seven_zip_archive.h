@@ -124,7 +124,7 @@ class ArchiveBase
     ~ArchiveBase();
     void rubyEventLoop();
     static VALUE staticRubyEventLoop(void *p);
-    bool runRubyAction(RubyAction action);
+    template<typename T> bool runRubyAction(T t);
     static VALUE runProtectedRubyAction(VALUE p);
 
   protected:

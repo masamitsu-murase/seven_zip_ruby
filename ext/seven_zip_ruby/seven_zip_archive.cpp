@@ -178,8 +178,10 @@ bool ArchiveBase::runRubyActionImpl(RubyAction *action)
     return (tuple.second && m_event_loop_running);
 }
 
-bool ArchiveBase::runRubyAction(RubyAction action)
+template<typename T>
+bool ArchiveBase::runRubyAction(T t)
 {
+    RubyAction action = t;
     return runRubyActionImpl(&action);
 }
 
