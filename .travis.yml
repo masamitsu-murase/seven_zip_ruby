@@ -1,12 +1,11 @@
 language: ruby
 rvm:
   - "2.0.0"
-  - "2.1.0-preview2"
+  - "2.1.0"
   - "rbx-2.2.1"
   - "ruby-head"
 matrix:
   allow_failures:
-    - rvm: "2.1.0-preview2"
     - rvm: "ruby-head"
 cache:
   - apt
