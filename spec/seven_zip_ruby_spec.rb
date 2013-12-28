@@ -394,6 +394,7 @@ describe SevenZipRuby do
         base_dir = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
         entries = szr.entries
         files = Pathname.glob(base_dir.to_s + "/**/*", File::FNM_DOTMATCH) + [ base_dir ]
+        files = files.select{ |i| i.basename.to_s != "." && i.basename.to_s != ".." }
 
         expect(entries.size).to eq files.size
 

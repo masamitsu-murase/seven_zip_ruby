@@ -351,6 +351,9 @@ module SevenZipRuby
       end
 
       Pathname.glob(directory.join("**", "*").to_s, File::FNM_DOTMATCH) do |entry|
+        basename = entry.basename.to_s
+        next if (basename == "." || basename == "..")
+
         name = (base_dir + entry.relative_path_from(directory)).cleanpath if (base_dir)
 
         if (entry.file?)
