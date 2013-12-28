@@ -76,8 +76,8 @@ module SevenZipRubySpecHelper
 
     def prepare_seven_zip_file
       Dir.chdir(SAMPLE_FILE_DIR) do
-        my_system("7z a -bd \"#{SEVEN_ZIP_FILE}\" *")
-        my_system("7z a -bd \"-p#{SEVEN_ZIP_PASSWORD}\" \"#{SEVEN_ZIP_PASSWORD_FILE}\" *")
+        my_system("7z a -bd \"#{SEVEN_ZIP_FILE}\" * .*")
+        my_system("7z a -bd \"-p#{SEVEN_ZIP_PASSWORD}\" \"#{SEVEN_ZIP_PASSWORD_FILE}\" * .*")
       end
     end
 
