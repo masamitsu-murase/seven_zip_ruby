@@ -87,9 +87,13 @@ module SevenZipRuby
         szw = self.new
         szw.open(stream, param)
         if (block)
-          block.call(szw)
-          szw.compress
-          szw.close
+          begin
+            block.call(szw)
+            szw.compress
+            szw.close
+          ensure
+            szw.close_file
+          end
         else
           szw
         end
@@ -119,9 +123,13 @@ module SevenZipRuby
         szw = self.new
         szw.open_file(filename, param)
         if (block)
-          block.call(szw)
-          szw.compress
-          szw.close
+          begin
+            block.call(szw)
+            szw.compress
+            szw.close
+          ensure
+            szw.close_file
+          end
         else
           szw
         end
@@ -213,8 +221,12 @@ module SevenZipRuby
 
     def close
       close_impl
+      close_file
+    end
+
+    def close_file  # :nodoc:
       if (@stream)
-        @stream.close
+        @stream.close rescue nil
         @stream = nil
       end
     end
