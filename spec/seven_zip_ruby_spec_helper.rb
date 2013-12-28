@@ -21,6 +21,12 @@ module SevenZipRubySpecHelper
     { name: "directory", directory: true },
     { name: "directory/utf8_file.txt", data: "日本語のファイル".force_encoding("ASCII-8BIT"), directory: false },
     { name: "directory/utf8_name®.txt", data: "日本語のファイル".force_encoding("ASCII-8BIT"), directory: false },
+    { name: "directory/.dot.txt", data: "Dot text".force_encoding("ASCII-8BIT"), directory: false },
+    { name: "directory/.dot_dir", directory: true },
+    { name: "directory/.dot_dir/normal.txt", data: "Dot text".force_encoding("ASCII-8BIT"), directory: false },
+    { name: ".dot_dir", directory: true },
+    { name: ".dot_dir/normal.txt", data: "Normal text".force_encoding("ASCII-8BIT"), directory: false },
+    { name: ".dot_dir/.dot.txt", data: "Dot text".force_encoding("ASCII-8BIT"), directory: false },
     { name: "empty_directory", directory: true }
   ]
 

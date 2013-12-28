@@ -122,9 +122,10 @@ describe SevenZipRuby do
       expect(SevenZipRuby::SevenZipReader.verify(StringIO.new(data))).to eq true
 
       data[0x27] = 0xEB.chr  # This highly dependes on the current test binary.
+      expected = [ :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, true, true, true, true, true ]
       SevenZipRuby::SevenZipReader.open(StringIO.new(data)) do |szr|
         expect(szr.test).to eq false
-        expect(szr.verify_detail).to eq [ :DataError, :DataError, :DataError, true, true, true ]
+        expect(szr.verify_detail).to eq expected
       end
 
 
@@ -137,8 +138,9 @@ describe SevenZipRuby do
         expect(szr.verify).to eq false
       end
 
+      expected = [ :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, true, true, true, true, true ]
       SevenZipRuby::SevenZipReader.open(StringIO.new(data), { password: "wrong password" }) do |szr|
-        expect(szr.verify_detail).to eq [ :DataError, :DataError, :DataError, true, true, true ]
+        expect(szr.verify_detail).to eq expected
       end
     end
 
@@ -331,7 +333,10 @@ describe SevenZipRuby do
         Dir.chdir(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) do
           output = StringIO.new("")
           SevenZipRuby::SevenZipWriter.open(output) do |szw|
-            Pathname.glob("*") do |path|
+            Pathname.glob("*", File::FNM_DOTMATCH) do |path|
+              basename = path.basename.to_s
+              next if (basename == "." || basename == "..")
+
               if (path.file?)
                 szw.add_file(path)
               else
@@ -388,7 +393,7 @@ describe SevenZipRuby do
       SevenZipRuby::SevenZipReader.open(output) do |szr|
         base_dir = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
         entries = szr.entries
-        files = Pathname.glob(base_dir.to_s + "/**/*") + [ base_dir ]
+        files = Pathname.glob(base_dir.to_s + "/**/*", File::FNM_DOTMATCH) + [ base_dir ]
 
         expect(entries.size).to eq files.size
 

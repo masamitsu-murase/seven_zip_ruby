@@ -350,7 +350,7 @@ module SevenZipRuby
         mkdir(directory, { ctime: directory.ctime, atime: directory.atime, mtime: directory.mtime })
       end
 
-      Pathname.glob(directory.join("**", "*").to_s) do |entry|
+      Pathname.glob(directory.join("**", "*").to_s, File::FNM_DOTMATCH) do |entry|
         name = (base_dir + entry.relative_path_from(directory)).cleanpath if (base_dir)
 
         if (entry.file?)
