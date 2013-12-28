@@ -1401,10 +1401,25 @@ STDMETHODIMP ArchiveUpdateCallback::GetProperty(UInt32 index, PROPID propID, PRO
 STDMETHODIMP ArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream **inStream)
 {
     VALUE rb_stream;
+    std::string filepath;
     VALUE proc = m_archive->callbackProc();
     bool ret = m_archive->runRubyAction([&](){
         VALUE info = m_archive->itemInfo(index);
-        rb_stream = rb_funcall(proc, INTERN("call"), 2, ID2SYM(INTERN("stream")), info);
+        VALUE ret_array = rb_funcall(proc, INTERN("call"), 2, ID2SYM(INTERN("stream")), info);
+        if (NIL_P(ret_array)){
+            rb_stream = Qnil;
+            return;
+        }
+
+        // ret_array[0]: true:  filepath
+        //               false: io
+        if (RTEST(rb_ary_entry(ret_array, 0))){
+            rb_stream = Qnil;
+            VALUE path = rb_ary_entry(ret_array, 1);
+            filepath = std::string(RSTRING_PTR(path), RSTRING_LEN(path));
+        }else{
+            rb_stream = rb_ary_entry(ret_array, 1);
+        }
     });
     if (!ret){
         m_archive->clearProcessingStream();
@@ -1413,9 +1428,15 @@ STDMETHODIMP ArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream 
 
     m_archive->setProcessingStream(rb_stream, index);
 
-    InStream *stream = new InStream(rb_stream, m_archive);
-    CMyComPtr<InStream> ptr(stream);
-    *inStream = ptr.Detach();
+    if (NIL_P(rb_stream) && !(filepath.empty())){
+        FileInStream *stream = new FileInStream(filepath, m_archive);
+        CMyComPtr<FileInStream> ptr(stream);
+        *inStream = ptr.Detach();
+    }else{
+        InStream *stream = new InStream(rb_stream, m_archive);
+        CMyComPtr<InStream> ptr(stream);
+        *inStream = ptr.Detach();
+    }
 
     return S_OK;
 }
@@ -1513,6 +1534,130 @@ STDMETHODIMP InStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     }
 
     return S_OK;
+}
+
+////////////////////////////////////////////////////////////////
+FileInStream::FileInStream(const std::string  &filename, ArchiveBase *archive)
+     : m_archive(archive)
+#ifdef USE_WIN32_FILE_API
+     , m_file_handle(INVALID_HANDLE_VALUE)
+#else
+     , m_file(filename.c_str(), std::ios::binary)
+#endif
+{
+#ifdef USE_WIN32_FILE_API
+    BSTR name = ConvertStringToBstr(filename);
+    m_file_handle = CreateFileW(name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                                FILE_ATTRIBUTE_NORMAL, NULL);
+    SysFreeString(name);
+#else
+    // Nothing to do
+#endif
+}
+
+FileInStream::~FileInStream()
+{
+#ifdef USE_WIN32_FILE_API
+    if (m_file_handle == INVALID_HANDLE_VALUE){
+        return;
+    }
+
+    CloseHandle(m_file_handle);
+    m_file_handle = INVALID_HANDLE_VALUE;
+#else
+    // Nothing to do
+#endif
+}
+
+STDMETHODIMP FileInStream::Seek(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition)
+{
+#ifdef USE_WIN32_FILE_API
+    if (m_file_handle == INVALID_HANDLE_VALUE){
+        return E_FAIL;
+    }
+
+    DWORD method;
+    switch(seekOrigin){
+      case 0:
+        method = FILE_BEGIN;
+        break;
+      case 1:
+        method = FILE_CURRENT;
+        break;
+      case 2:
+        method = FILE_END;
+        break;
+      default:
+        return E_FAIL;
+    }
+
+    DWORD low, high;
+    low = (DWORD)(offset & 0xFFFFFFFFUL);
+    high = (DWORD)((offset >> 32) & 0xFFFFFFFFUL);
+    DWORD new_low = SetFilePointer(m_file_handle, (LONG)low, (PLONG)&high, method);
+
+    if (newPosition){
+        *newPosition = (((UInt64)high) << 32) + ((UInt64)new_low);
+    }
+    return S_OK;
+#else
+    if (!m_file.is_open()){
+        return E_FAIL;
+    }
+
+    std::ios::seekdir method;
+    switch(seekOrigin){
+      case 0:
+        method = std::ios::beg;
+        break;
+      case 1:
+        method = std::ios::cur;
+        break;
+      case 2:
+        method = std::ios::end;
+        break;
+      default:
+        return E_FAIL;
+    }
+
+    std::streamoff sto = offset;
+    m_file.seekg(sto, method);
+    if (newPosition){
+        *newPosition = m_file.tellg();
+    }
+    return S_OK;
+#endif
+}
+
+STDMETHODIMP FileInStream::Read(void *data, UInt32 size, UInt32 *processedSize)
+{
+#ifdef USE_WIN32_FILE_API
+    if (m_file_handle == INVALID_HANDLE_VALUE){
+        return E_FAIL;
+    }
+
+    DWORD processed_size;
+    BOOL ret = ReadFile(m_file_handle, data, size, &processed_size, NULL);
+    if (!ret){
+        return E_FAIL;
+    }
+
+    if (processedSize){
+        *processedSize = processed_size;
+    }
+
+    return S_OK;
+#else
+    if (!m_file.is_open()){
+        return E_FAIL;
+    }
+
+    m_file.read(reinterpret_cast<char*>(data), size);
+    if (processedSize){
+        *processedSize = m_file.gcount();
+    }
+    return S_OK;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////

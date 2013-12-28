@@ -54,7 +54,11 @@ module SevenZipRuby
     # Encoding used for path string in 7zip archive.
     PATH_ENCODING = Encoding::UTF_8
 
+    @use_native_input_file_stream = true
+
     class << self
+      attr_accessor :use_native_input_file_stream
+
       # Open 7zip archive to write.
       #
       # ==== Args
@@ -136,8 +140,10 @@ module SevenZipRuby
       #     SevenZipRuby::SevenZipWriter.add_directory(file, 'dir')
       #   end
       def add_directory(stream, dir, param = {})
-        password = { password: param.delete(:password) }
-        self.open(stream, password) do |szw|
+        open_param = {
+          password: param.delete(:password)
+        }
+        self.open(stream, open_param) do |szw|
           szw.add_directory(dir, param)
         end
       end
@@ -156,8 +162,10 @@ module SevenZipRuby
       #     SevenZipRuby::SevenZipWriter.add_file(file, 'file.txt')
       #   end
       def add_file(stream, filename, param = {})
-        password = { password: param.delete(:password) }
-        self.open(stream, password) do |szw|
+        open_param = {
+          password: param.delete(:password)
+        }
+        self.open(stream, open_param) do |szw|
           szw.add_file(filename, param)
         end
       end
@@ -381,9 +389,14 @@ module SevenZipRuby
         case(type)
         when :stream
           if (info.buffer?)
-            next StringIO.new(info.data)
+            #      type(filename/io), data
+            next [ false, StringIO.new(info.data) ]
           elsif (info.file?)
-            next File.open(info.data, "rb")
+            if (SevenZipWriter.use_native_input_file_stream)
+              next [ true, info.data ]
+            else
+              next [ false, File.open(info.data, "rb") ]
+            end
           else
             next nil
           end

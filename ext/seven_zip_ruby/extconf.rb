@@ -130,7 +130,7 @@ def main
   if (RUBY_PLATFORM.include?("mswin"))
     # mswin32
     $LIBS = "oleaut32.lib"
-    $CPPFLAGS = "/I.. /EHsc /DNDEBUG #{base_flag} "
+    $CPPFLAGS = "/I.. /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} "
   elsif (RUBY_PLATFORM.include?("mingw"))
     # MinGW
     $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
@@ -140,7 +140,7 @@ def main
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG  #{base_flag} "
+    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} "
   else
     cpp0x_flag = [ "", "-std=c++11", "-std=gnu++11", "-std=c++0x", "-std=gnu++0x" ].find do |opt|
       next (try_compile(sample_cpp_source, "#{opt} -x c++ ") || try_compile(sample_cpp_source, "#{opt} "))

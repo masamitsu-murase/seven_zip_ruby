@@ -474,6 +474,26 @@ class InStream : public IInStream, public CMyUnknownImp
     ArchiveBase *m_archive;
 };
 
+class FileInStream : public IInStream, public CMyUnknownImp
+{
+  public:
+    FileInStream(const std::string &filename, ArchiveBase *archive);
+    ~FileInStream();
+
+    MY_UNKNOWN_IMP1(IInStream)
+
+    STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+    STDMETHOD(Read)(void *data, UInt32 size, UInt32 *processedSize);
+
+  private:
+    ArchiveBase *m_archive;
+#ifdef USE_WIN32_FILE_API
+    HANDLE m_file_handle;
+#else
+    std::ifstream m_file;
+#endif
+};
+
 
 class OutStream : public IOutStream, public CMyUnknownImp
 {
@@ -492,6 +512,23 @@ class OutStream : public IOutStream, public CMyUnknownImp
     ArchiveBase *m_archive;
 };
 
+// Not implemented yet.
+class FileOutStream : public IOutStream, public CMyUnknownImp
+{
+  public:
+    FileOutStream(const std::string &filename, ArchiveBase *archive);
+
+    MY_UNKNOWN_IMP1(IOutStream)
+
+    STDMETHOD(Write)(const void *data, UInt32 size, UInt32 *processedSize);
+
+    STDMETHOD(Seek)(Int64 offset, UInt32 seekOrigin, UInt64 *newPosition);
+    STDMETHOD(SetSize)(UInt64 size);
+
+  private:
+    const std::string m_filename;
+    ArchiveBase *m_archive;
+};
 
 
 ////////////////////////////////////////////////////////////////

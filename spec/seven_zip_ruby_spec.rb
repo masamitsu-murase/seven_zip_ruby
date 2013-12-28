@@ -13,11 +13,13 @@ describe SevenZipRuby do
   end
 
   before(:each) do
+    @use_native_input_file_stream = SevenZipRuby::SevenZipWriter.use_native_input_file_stream
     SevenZipRubySpecHelper.prepare_each
   end
 
   after(:each) do
     SevenZipRubySpecHelper.cleanup_each
+    SevenZipRuby::SevenZipWriter.use_native_input_file_stream = @use_native_input_file_stream
   end
 
 
@@ -322,53 +324,59 @@ describe SevenZipRuby do
       end
     end
 
-    example "add_directory" do
-      Dir.chdir(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) do
-        output = StringIO.new("")
-        SevenZipRuby::SevenZipWriter.open(output) do |szw|
-          Pathname.glob("*") do |path|
-            if (path.file?)
-              szw.add_file(path)
-            else
-              szw.add_directory(path)
+    [ true, false ].each do |use_native_input_file_stream|
+      example "add_directory: use_native_input_file_stream=#{use_native_input_file_stream}" do
+        SevenZipRuby::SevenZipWriter.use_native_input_file_stream = use_native_input_file_stream
+
+        Dir.chdir(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) do
+          output = StringIO.new("")
+          SevenZipRuby::SevenZipWriter.open(output) do |szw|
+            Pathname.glob("*") do |path|
+              if (path.file?)
+                szw.add_file(path)
+              else
+                szw.add_directory(path)
+              end
+            end
+          end
+
+          output.rewind
+          SevenZipRuby::SevenZipReader.open(output) do |szr|
+            entries = szr.entries
+            expect(entries.size).to eq SevenZipRubySpecHelper::SAMPLE_DATA.size
+
+            entries.each do |entry|
+              entry_in_sample = SevenZipRubySpecHelper::SAMPLE_DATA.find{ |i| i[:name] == entry.path.to_s }
+              local_entry = Pathname(File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, entry_in_sample[:name]))
+              if (entry_in_sample[:directory])
+                expect(entry.directory?).to eq true
+              else
+                expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
+              end
+              expect(entry.mtime.to_i).to eq local_entry.mtime.to_i
             end
           end
         end
+      end
 
-        output.rewind
-        SevenZipRuby::SevenZipReader.open(output) do |szr|
-          entries = szr.entries
-          expect(entries.size).to eq SevenZipRubySpecHelper::SAMPLE_DATA.size
+      example "add_directory singleton version: use_native_input_file_stream=#{use_native_input_file_stream}" do
+        SevenZipRuby::SevenZipWriter.use_native_input_file_stream = use_native_input_file_stream
 
-          entries.each do |entry|
-            entry_in_sample = SevenZipRubySpecHelper::SAMPLE_DATA.find{ |i| i[:name] == entry.path.to_s }
-            local_entry = Pathname(File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, entry_in_sample[:name]))
-            if (entry_in_sample[:directory])
-              expect(entry.directory?).to eq true
-            else
-              expect(szr.extract_data(entry)).to eq File.open(entry_in_sample[:name], "rb", &:read)
-            end
-            expect(entry.mtime.to_i).to eq local_entry.mtime.to_i
+        dir = File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, "..")
+        dirname = File.basename(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
+        Dir.chdir(dir) do
+          output = StringIO.new("")
+          SevenZipRuby::SevenZipWriter.add_directory(output, dirname)
+
+          output2 = StringIO.new("")
+          SevenZipRuby::SevenZipWriter.open(output2) do |szr|
+            szr.add_directory(dirname)
           end
+
+          expect(output.string).to eq output2.string
         end
       end
-    end
-
-    example "add_directory singleton version" do
-      dir = File.join(SevenZipRubySpecHelper::SAMPLE_FILE_DIR, "..")
-      dirname = File.basename(SevenZipRubySpecHelper::SAMPLE_FILE_DIR)
-      Dir.chdir(dir) do
-        output = StringIO.new("")
-        SevenZipRuby::SevenZipWriter.add_directory(output, dirname)
-
-        output2 = StringIO.new("")
-        SevenZipRuby::SevenZipWriter.open(output2) do |szr|
-          szr.add_directory(dirname)
-        end
-
-        expect(output.string).to eq output2.string
-      end
-    end
+    end  # use_native_input_file_stream
 
     example "use as option" do
       output = StringIO.new("")
