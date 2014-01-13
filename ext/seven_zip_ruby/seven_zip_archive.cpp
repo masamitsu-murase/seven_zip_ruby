@@ -40,13 +40,24 @@ ArchiveBase::RubyAction ArchiveBase::ACTION_END = [](){};
 
 ArchiveBase::ArchiveBase()
      : m_action_tuple(nullptr),
-       m_event_loop_running(false)
+       m_event_loop_running(false),
+       m_self(Qnil)
 {
     m_action_result.clear();
 }
 
 ArchiveBase::~ArchiveBase()
 {
+}
+
+void ArchiveBase::setSelf(VALUE self)
+{
+    m_self = self;
+}
+
+VALUE ArchiveBase::self()
+{
+    return m_self;
 }
 
 void ArchiveBase::rubyEventLoop()
@@ -119,6 +130,8 @@ VALUE ArchiveBase::runProtectedRubyAction(VALUE p)
 VALUE ArchiveBase::staticRubyEventLoop(void *p)
 {
     ArchiveBase *self = reinterpret_cast<ArchiveBase*>(p);
+    VALUE gc_guard = self->self();
+    RB_GC_GUARD(gc_guard);
     self->rubyEventLoop();
     return Qnil;
 }
@@ -192,6 +205,7 @@ void ArchiveBase::finishRubyAction()
 
 void ArchiveBase::mark()
 {
+    rb_gc_mark(m_self);
     m_action_result.mark();
 }
 

@@ -5,6 +5,7 @@
 #include <functional>
 #include <utility>
 #include <string>
+#include <iostream>
 
 #include <ruby.h>
 
@@ -392,6 +393,7 @@ VALUE wrapInitialize(VALUE self)
     Data_Get_Struct(self, T, p);
     std::fill_n(reinterpret_cast<unsigned char*>(p), sizeof(T), ~INIT_MEMORY_VALUE);
     new(p) T();
+    p->setSelf(self);
 
     return Qnil;
 }

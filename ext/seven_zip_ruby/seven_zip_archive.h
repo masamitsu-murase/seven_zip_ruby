@@ -122,6 +122,8 @@ class ArchiveBase
   public:
     ArchiveBase();
     ~ArchiveBase();
+    void setSelf(VALUE self);
+    VALUE self();
     void rubyEventLoop();
     static VALUE staticRubyEventLoop(void *p);
     template<typename T> bool runRubyAction(T t);
@@ -154,6 +156,7 @@ class ArchiveBase
     Mutex m_action_mutex;
     ConditionVariable m_action_cond_var;
     volatile bool m_event_loop_running;
+    VALUE m_self;
 
   protected:
     RubyActionResult m_action_result;
