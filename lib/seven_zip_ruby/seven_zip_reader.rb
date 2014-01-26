@@ -165,7 +165,7 @@ module SevenZipRuby
       def extract(stream, index, dir = ".", param = {})
         password = { password: param.delete(:password) }
         self.open(stream, password) do |szr|
-          szr.extract(index, dir, param)
+          szr.extract(index, dir)
         end
       end
 
@@ -183,7 +183,7 @@ module SevenZipRuby
       def extract_all(stream, dir = ".", param = {})
         password = { password: param.delete(:password) }
         self.open(stream, password) do |szr|
-          szr.extract_all(dir, param)
+          szr.extract_all(dir)
         end
       end
 
