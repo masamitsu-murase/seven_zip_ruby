@@ -1,4 +1,5 @@
 require("stringio")
+require("thread")
 
 module SevenZipRuby
 
@@ -267,7 +268,9 @@ module SevenZipRuby
     #   end
     def test
       begin
-        return test_all_impl(nil)
+        synchronize do
+          return test_all_impl(nil)
+        end
       rescue
         return false
       end
@@ -288,7 +291,9 @@ module SevenZipRuby
     #   end
     def verify_detail
       begin
-        return test_all_impl(true)
+        synchronize do
+          return test_all_impl(true)
+        end
       rescue
         return nil
       end
@@ -320,11 +325,15 @@ module SevenZipRuby
         return extract_all(path)
       when Enumerable
         index_list = index.map(&:to_i).sort.uniq
-        extract_files_impl(index_list, file_proc(path))
+        synchronize do
+          extract_files_impl(index_list, file_proc(path))
+        end
       when nil
         raise ArgumentError.new("Invalid parameter index")
       else
-        extract_impl(index.to_i, file_proc(path))
+        synchronize do
+          extract_impl(index.to_i, file_proc(path))
+        end
       end
     end
 
@@ -340,7 +349,9 @@ module SevenZipRuby
     #     end
     #   end
     def extract_all(dir = ".")
-      extract_all_impl(file_proc(File.expand_path(dir)))
+      synchronize do
+        extract_all_impl(file_proc(File.expand_path(dir)))
+      end
     end
 
     # Extract entires of 7zip archive to local directory based on the block return value.
@@ -393,7 +404,9 @@ module SevenZipRuby
         end
 
         ret = []
-        extract_all_impl(data_proc(ret, idx_prj))
+        synchronize do
+          extract_all_impl(data_proc(ret, idx_prj))
+        end
         return ret
 
       when Enumerable
@@ -401,7 +414,9 @@ module SevenZipRuby
         idx_prj = Hash[*(index_list.each_with_index.map{ |idx, i| [ idx, i ] }.flatten)]
 
         ret = []
-        extract_files_impl(index_list, data_proc(ret, idx_prj))
+        synchronize do
+          extract_files_impl(index_list, data_proc(ret, idx_prj))
+        end
         return ret
 
       when nil
@@ -418,7 +433,9 @@ module SevenZipRuby
         end
 
         ret = []
-        extract_impl(index, data_proc(ret, idx_prj))
+        synchronize do
+          extract_impl(index, data_proc(ret, idx_prj))
+        end
         return ret[0]
 
       end
@@ -482,6 +499,18 @@ module SevenZipRuby
       end
     end
     private :data_proc
+
+    COMPRESS_GUARD = Mutex.new  # :nodoc:
+    def synchronize  # :nodoc:
+      if (COMPRESS_GUARD)
+        COMPRESS_GUARD.synchronize do
+          yield
+        end
+      else
+        yield
+      end
+    end
+    private :synchronize
   end
 
 

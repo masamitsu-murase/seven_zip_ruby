@@ -1,4 +1,5 @@
 require("stringio")
+require("thread")
 
 module SevenZipRuby
 
@@ -253,7 +254,9 @@ module SevenZipRuby
     #    szw.close
     #  end
     def compress
-      compress_impl(compress_proc)
+      synchronize do
+        compress_impl(compress_proc)
+      end
       return self
     end
 
@@ -421,6 +424,18 @@ module SevenZipRuby
       end
     end
     private :compress_proc
+
+    COMPRESS_GUARD = Mutex.new  # :nodoc:
+    def synchronize  # :nodoc:
+      if (COMPRESS_GUARD)
+        COMPRESS_GUARD.synchronize do
+          yield
+        end
+      else
+        yield
+      end
+    end
+    private :synchronize
   end
 
 

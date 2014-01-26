@@ -79,6 +79,24 @@ describe SevenZipRuby do
       end
     end
 
+    example "singleton method: extract" do
+      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+        SevenZipRuby::SevenZipReader.extract(file, :all, SevenZipRubySpecHelper::EXTRACT_DIR)
+      end
+    end
+
+    example "singleton method: extract_all" do
+      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+        SevenZipRuby::SevenZipReader.extract_all(file, SevenZipRubySpecHelper::EXTRACT_DIR)
+      end
+    end
+
+    example "singleton method: verify" do
+      File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+        SevenZipRuby::SevenZipReader.verify(file)
+      end
+    end
+
     example "extract archive" do
       File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
         SevenZipRuby::SevenZipReader.open(file) do |szr|
@@ -141,6 +159,28 @@ describe SevenZipRuby do
       expected = [ :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, true, true, true, true, true ]
       SevenZipRuby::SevenZipReader.open(StringIO.new(data), { password: "wrong password" }) do |szr|
         expect(szr.verify_detail).to eq expected
+      end
+    end
+
+    example "run in multi threads" do
+      s = StringIO.new
+      SevenZipRuby::SevenZipWriter.open(s) do |szw|
+        szw.add_data(SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA, "data.bin")
+      end
+      data = s.string
+
+      th_list = []
+      100.times do
+        th = Thread.new do
+          stream = StringIO.new(data)
+          SevenZipRuby::SevenZipReader.open(stream) do |szr|
+            szr.extract_data(0)
+          end
+        end
+        th_list.push(th)
+      end
+      th_list.each do |t|
+        t.join
       end
     end
 
@@ -468,6 +508,24 @@ describe SevenZipRuby do
         next output.string.size
       end
       expect(size.sort.reverse).to eq size
+    end
+
+    example "run in multi threads" do
+      th_list = []
+      mutex = Mutex.new
+      100.times do
+        th = Thread.new do
+          stream = StringIO.new
+          SevenZipRuby::SevenZipWriter.open(stream) do |szw|
+            data = SevenZipRubySpecHelper::SAMPLE_LARGE_RANDOM_DATA
+            szw.add_data(data, "hoge.dat")
+          end
+        end
+        th_list.push(th)
+      end
+      th_list.each do |t|
+        t.join
+      end
     end
 
     if (SevenZipRubySpecHelper.processor_count && SevenZipRubySpecHelper.processor_count > 1)
