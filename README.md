@@ -187,6 +187,8 @@ LGPL and unRAR license. Please refer to LICENSE.txt.
 
 ## Releases
 
+* 1.2.0  
+  Bug fix.
 * 1.1.0  
   Raise error when wrong password is specified.
 * 1.0.0  
