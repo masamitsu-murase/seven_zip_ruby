@@ -295,7 +295,7 @@ ruby_env_list = []
 
 ruby200_mingw32 =
   RubyEnvMinGW.new("ruby200/mingw32",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p353-i386-mingw32.7z?direct",
+               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p451-i386-mingw32.7z?direct",
                "http://cdn.rubyinstaller.org/archives/devkits/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
 ruby_env_list.push({
                      "2.0" => ruby200_mingw32
@@ -303,7 +303,7 @@ ruby_env_list.push({
 
 ruby200_mingw32_64 =
   RubyEnvMinGW.new("ruby200/mingw32_64",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p353-x64-mingw32.7z?direct",
+               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p451-x64-mingw32.7z?direct",
                "http://cdn.rubyinstaller.org/archives/devkits/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
 ruby_env_list.push({
                      "2.0" => ruby200_mingw32_64
@@ -311,15 +311,15 @@ ruby_env_list.push({
 
 ruby200_vc2010 =
   RubyEnvVC2010.new("ruby200/vc2010",
-                "ftp://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p247.tar.gz",
+                "http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p451.tar.gz",
                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-ruby210_vc2010 =
-  RubyEnvVC2010.new("ruby210/vc2010",
-                "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.0.tar.gz",
+ruby211_vc2010 =
+  RubyEnvVC2010.new("ruby211/vc2010",
+                "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.1.tar.gz",
                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
 ruby_env_list.push({
                      "2.0" => ruby200_vc2010,
-                     "2.1" => ruby210_vc2010
+                     "2.1" => ruby211_vc2010
                    })
 
 ruby_env_list.map(&:values).flatten.each do |ruby|
