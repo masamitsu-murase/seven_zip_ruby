@@ -512,7 +512,6 @@ describe SevenZipRuby do
 
     example "run in multi threads" do
       th_list = []
-      mutex = Mutex.new
       100.times do
         th = Thread.new do
           stream = StringIO.new
@@ -596,7 +595,7 @@ describe SevenZipRuby do
         expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error
       end
 
-      if (false && RUBY_ENGINE == "ruby")
+      if (RUBY_ENGINE == "ruby")
         # It seems that Rubinius has the different way to handle error.
         # Therefore, it sometimes fails to kill SevenZipRuby thread.
         example "kill thread" do
@@ -616,11 +615,11 @@ describe SevenZipRuby do
             th.join
             diff = Time.now - start
 
-            10.times do
+            20.times do
+              kill_time = rand * diff
               th = Thread.start{ prc.call }
-              sleep(rand * diff)
+              sleep(kill_time)
               expect{ th.kill }.not_to raise_error   # Thread can be killed.
-              sleep diff*2  # Workaround. When some threads of SZR are running and killed, SEGV sometimes occurs...
             end
           end
         end
