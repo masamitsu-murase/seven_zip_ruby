@@ -179,9 +179,7 @@ describe SevenZipRuby do
         end
         th_list.push(th)
       end
-      th_list.each do |t|
-        t.join
-      end
+      th_list.each(&:join)
     end
 
 
@@ -522,9 +520,7 @@ describe SevenZipRuby do
         end
         th_list.push(th)
       end
-      th_list.each do |t|
-        t.join
-      end
+      th_list.each(&:join)
     end
 
     if (SevenZipRubySpecHelper.processor_count && SevenZipRubySpecHelper.processor_count > 1)
@@ -595,7 +591,7 @@ describe SevenZipRuby do
         expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error
       end
 
-      if (RUBY_ENGINE == "ruby")
+      if (false && RUBY_ENGINE == "ruby")
         # It seems that Rubinius has the different way to handle error.
         # Therefore, it sometimes fails to kill SevenZipRuby thread.
         example "kill thread" do
