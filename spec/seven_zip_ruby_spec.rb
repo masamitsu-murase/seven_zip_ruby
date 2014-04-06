@@ -139,6 +139,11 @@ describe SevenZipRuby do
 
       expect(SevenZipRuby::SevenZipReader.verify(StringIO.new(data))).to eq true
 
+      data_org = data[-1]
+      data[-1] = 0x01.chr  # This highly dependes on the current test binary.
+      expect(SevenZipRuby::SevenZipReader.verify(StringIO.new(data))).to eq false
+      data[-1] = data_org
+
       data[0x27] = 0xEB.chr  # This highly dependes on the current test binary.
       expected = [ :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, true, true, true, true, true ]
       SevenZipRuby::SevenZipReader.open(StringIO.new(data)) do |szr|
