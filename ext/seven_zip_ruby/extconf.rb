@@ -142,6 +142,14 @@ def main
 
     $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} "
   else
+    removed_flags = [ /\-mmacosx\-version\-min=[.0-9]+\b/ ]
+    removed_flags.each do |flag|
+      begin
+        $CFLAGS[flag] = ""
+      rescue
+      end
+    end
+
     cpp0x_flag = [ "", "-std=c++11", "-std=gnu++11", "-std=c++0x", "-std=gnu++0x" ].find do |opt|
       next (try_compile(sample_cpp_source, "#{opt} -x c++ ") || try_compile(sample_cpp_source, "#{opt} "))
     end
