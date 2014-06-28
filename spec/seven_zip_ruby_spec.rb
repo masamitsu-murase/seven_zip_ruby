@@ -54,7 +54,7 @@ describe SevenZipRuby do
           expect(info.header_size).to be < file.size
           expect(info.method).to eq "LZMA"
           expect(info.phy_size).to be file.size
-          expect(info.solid?).to be_true
+          expect(info.solid?).to be true
         end
       end
     end
