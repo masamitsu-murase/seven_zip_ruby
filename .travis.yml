@@ -2,11 +2,11 @@ language: ruby
 rvm:
   - "2.0.0"
   - "2.1.1"
-  - "rbx"
+  - "rbx-2"
   - "ruby-head"
 matrix:
   allow_failures:
-    - rvm: "rbx"
+    - rvm: "rbx-2"
     - rvm: "ruby-head"
 notifications:
   email: false
