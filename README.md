@@ -10,6 +10,9 @@ This extension calls the native library, 7z.dll or 7z.so, internally and it is i
 * Use official DLL, 7z.dll, internally.
 * Support extracting data into memory.
 
+## Document
+[RDoc](http://rubydoc.info/gems/seven_zip_ruby/frames) shows you the details.
+
 ## Examples
 
 ### Extract archive
