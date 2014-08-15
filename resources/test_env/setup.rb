@@ -270,7 +270,7 @@ call "#{vcvars_path}"
 cd /d "#{File.join(dir, ruby_src_dir)}"
 md build
 cd build
-call ..\\win32\\configure.bat --prefix=#{@ruby_dir}
+call ..\\win32\\configure.bat --disable-install-doc --prefix=#{@ruby_dir}
 nmake
 nmake install
 EOS
