@@ -4,18 +4,18 @@
 
 This is a Ruby gem library to extract/compress [7-Zip](http://www.7-zip.org) archives.
 
-This extension calls the native library, 7z.dll or 7z.so, internally and it is included in this gem.
+This extension calls the native library, 7z.dll or 7z.so, internally and these libraries are included in this gem.
 
 ## Features
-* Use official DLL, 7z.dll, internally.
-* Support extracting data into memory.
+* Uses official DLL, 7z.dll, internally.
+* Supports extracting data into memory.
 
 ## Document
 [RDoc](http://rubydoc.info/gems/seven_zip_ruby/frames) shows you the details.
 
 ## Examples
 
-### Extract archive
+### Extract archives
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -25,7 +25,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-You can also use handy method.
+You can also use simpler method.
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -33,7 +33,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-### Show entries in archive
+### Show the entries in the archive
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -45,7 +45,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-### Extract encrypted archive
+### Extract encrypted archives
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -63,7 +63,7 @@ end
 ```
 
 
-### Verify archive
+### Verify archives
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -117,7 +117,7 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
-### Get data from archive
+### Get data from archives
 
 Extract data into memory.
 
@@ -133,7 +133,7 @@ p data
 #  => File content is shown.
 ```
 
-### Create archive manually
+### Create an archive manually
 
 ```ruby
 File.open("filename.7z", "rb") do |file|
@@ -181,8 +181,8 @@ p(Time.now - start)
 ## TODO
 
 * Support file attributes on Linux and Mac OSX.
-* Support updating archive.
-* Support extracting rar archive.
+* Support update of an archive.
+* Support extract of a rar archive.
 
 
 ## License
@@ -191,9 +191,9 @@ LGPL and unRAR license. Please refer to LICENSE.txt.
 ## Releases
 
 * 1.2.*  
-  Bug fix.
+  - Fixed cosmetic bugs.
 * 1.1.0  
-  Raise error when wrong password is specified.
+  - Fixed a bug. Raises an exception when wrong password is specified.
 * 1.0.0  
-  Initial release.
+  - Initial release.
 
