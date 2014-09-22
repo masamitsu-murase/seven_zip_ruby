@@ -130,7 +130,7 @@ def main
   if (RUBY_PLATFORM.include?("mswin"))
     # mswin32
     $LIBS = "oleaut32.lib"
-    $CPPFLAGS = "/I.. /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} "
+    $CPPFLAGS = "/I.. /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
   elsif (RUBY_PLATFORM.include?("mingw"))
     # MinGW
     $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
@@ -140,7 +140,7 @@ def main
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} "
+    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
   else
     removed_flags = [ /\-mmacosx\-version\-min=[.0-9]+\b/ ]
     removed_flags.each do |flag|
@@ -155,7 +155,7 @@ def main
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. -I../CPP/include_windows -I../CPP #{cpp0x_flag} -DNDEBUG #{base_flag} "
+    $CPPFLAGS = "-I.. -I../CPP/include_windows -I../CPP #{cpp0x_flag} -DNDEBUG #{base_flag} #{$CPPFLAGS} "
 
 
     ostype = check_ostype
