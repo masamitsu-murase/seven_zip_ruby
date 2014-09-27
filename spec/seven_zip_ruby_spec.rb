@@ -227,6 +227,10 @@ describe SevenZipRuby do
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
           expect{ SevenZipRuby::Reader.open(file, password: "a"){ |szr| szr.extract_data(1) } }.to raise_error
         end
+
+        File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
+          expect{ SevenZipRuby::Reader.open(file, password: :InvalidType){ |szr| szr.extract_data(1) } }.to raise_error
+        end
       end
 
       example "raise error in open" do
@@ -366,6 +370,39 @@ describe SevenZipRuby do
           expect(szr.entries[0].path.to_s).to eq data[:name]
           expect(szr.extract_data(0)).to eq data[:data]
         end
+      end
+    end
+
+    example "set password" do
+      sample_data = "Sample Data"
+      sample_password = "sample password"
+
+      output = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output, { password: sample_password }) do |szw|
+        szw.add_data(sample_data, "hoge.txt")
+      end
+
+      output.rewind
+      SevenZipRuby::SevenZipReader.open(output, { password: sample_password }) do |szr|
+        expect(szr.extract_data(0)).to eq sample_data
+      end
+
+      output.rewind
+      expect{
+        SevenZipRuby::SevenZipReader.open(output, { password: "invalid password" }) do |szr|
+          szr.extract_data(0)
+        end
+      }.to raise_error
+
+
+      output = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output, { password: sample_password.to_sym }) do |szw|
+        szw.add_data(sample_data, "hoge.txt")
+      end
+
+      output.rewind
+      SevenZipRuby::SevenZipReader.open(output, { password: sample_password }) do |szr|
+        expect(szr.extract_data(0)).to eq sample_data
       end
     end
 
