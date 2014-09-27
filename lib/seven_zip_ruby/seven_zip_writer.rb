@@ -55,6 +55,14 @@ module SevenZipRuby
     # Encoding used for path string in 7zip archive.
     PATH_ENCODING = Encoding::UTF_8
 
+    # Files for self extraction.
+    SFX_FILE_LIST = {
+      default: File.expand_path("../7z.sfx", __FILE__),
+      gui:     File.expand_path("../7z.sfx", __FILE__),
+      console: File.expand_path("../7zCon.sfx", __FILE__)
+    }
+
+
     @use_native_input_file_stream = true
 
     class << self
@@ -200,6 +208,9 @@ module SevenZipRuby
       param = param.clone
       param[:password] = param[:password].to_s if (param[:password])
       stream.set_encoding(Encoding::ASCII_8BIT)
+
+      add_sfx(stream, param[:sfx]) if param[:sfx]
+
       open_impl(stream, param)
       return self
     end
@@ -426,6 +437,17 @@ module SevenZipRuby
       end
     end
     private :compress_proc
+
+    def add_sfx(stream, sfx)
+      sfx = :default if sfx == true
+      sfx_file = SFX_FILE_LIST[sfx]
+      raise ArgumentError.new("invalid option: :sfx") unless sfx_file
+
+      File.open(sfx_file, "rb") do |input|
+        IO.copy_stream(input, stream)
+      end
+    end
+    private :add_sfx
 
     COMPRESS_GUARD = Mutex.new  # :nodoc:
     def synchronize  # :nodoc:
