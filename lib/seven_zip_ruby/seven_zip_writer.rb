@@ -51,17 +51,25 @@ module SevenZipRuby
   #       szw.add_directory("test_dir")
   #     end
   #   end
+  #
+  # === Create a sfx, a self extracting archive for Windows executable binary.
+  #   File.open("filename.exe", "wb") do |file|
+  #     SevenZipRuby::SevenZipWriter.open(file, sfx: true) do |szw|
+  #       szw.add_directory("test_dir")
+  #     end
+  #   end
   class SevenZipWriter
     # Encoding used for path string in 7zip archive.
     PATH_ENCODING = Encoding::UTF_8
 
-    # Files for self extraction.
+    # Files for self extraction.  # :nodoc:
     SFX_FILE_LIST = {
       default: File.expand_path("../7z.sfx", __FILE__),
       gui:     File.expand_path("../7z.sfx", __FILE__),
       console: File.expand_path("../7zCon.sfx", __FILE__)
     }
 
+    OPEN_PARAM_LIST = [ :password, :sfx ]  # :nodoc:
 
     @use_native_input_file_stream = true
 
@@ -72,10 +80,12 @@ module SevenZipRuby
       #
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
-      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      # +param+ :: Optional hash parameter.
+      #            <tt>:password</tt> key specifies password of this archive.
+      #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
-      #   # Open archive
+      #   # Open an archive
       #   File.open("filename.7z", "wb") do |file|
       #     SevenZipRuby::SevenZipWriter.open(file) do |szw|
       #       # Create archive.
@@ -88,6 +98,14 @@ module SevenZipRuby
       #   # Open without block.
       #   File.open("filename.7z", "wb") do |file|
       #     szw = SevenZipRuby::SevenZipWriter.open(file)
+      #     # Create archive.
+      #     szw.compress  # Compress must be called in this case.
+      #     szw.close
+      #   end
+      #
+      #   # Create a self extracting archive. <tt>:gui</tt> and <tt>:console</tt> can be used.
+      #   File.open("filename.7z", "wb") do |file|
+      #     szw = SevenZipRuby::SevenZipWriter.open(file, sfx: :gui)
       #     # Create archive.
       #     szw.compress  # Compress must be called in this case.
       #     szw.close
@@ -112,7 +130,9 @@ module SevenZipRuby
       #
       # ==== Args
       # +filename+ :: 7zip archive filename.
-      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      # +param+ :: Optional hash parameter.
+      #            <tt>:password</tt> key specifies password of this archive.
+      #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
       #   # Open archive
@@ -149,7 +169,9 @@ module SevenZipRuby
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
       # +dir+ :: Directory to be added to the 7zip archive. <b><tt>dir</tt></b> must be a <b>relative path</b>.
-      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      # +param+ :: Optional hash parameter.
+      #            <tt>:password</tt> key specifies password of this archive.
+      #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
       #   # Create 7zip archive which includes 'dir'.
@@ -157,9 +179,11 @@ module SevenZipRuby
       #     SevenZipRuby::SevenZipWriter.add_directory(file, 'dir')
       #   end
       def add_directory(stream, dir, param = {})
-        open_param = {
-          password: param.delete(:password)
-        }
+        param = param.clone
+        open_param = {}
+        OPEN_PARAM_LIST.each do |key|
+          open_param[key] = param.delete(key) if param.key?(key)
+        end
         self.open(stream, open_param) do |szw|
           szw.add_directory(dir, param)
         end
@@ -171,7 +195,9 @@ module SevenZipRuby
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
       # +file+ :: File to be added to the 7zip archive. <b><tt>file</tt></b> must be a <b>relative path</b>.
-      # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+      # +param+ :: Optional hash parameter.
+      #            <tt>:password</tt> key specifies password of this archive.
+      #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
       #   # Create 7zip archive which includes 'file.txt'.
@@ -179,9 +205,11 @@ module SevenZipRuby
       #     SevenZipRuby::SevenZipWriter.add_file(file, 'file.txt')
       #   end
       def add_file(stream, filename, param = {})
-        open_param = {
-          password: param.delete(:password)
-        }
+        param = param.clone
+        open_param = {}
+        OPEN_PARAM_LIST.each do |key|
+          open_param[key] = param.delete(key) if param.key?(key)
+        end
         self.open(stream, open_param) do |szw|
           szw.add_file(filename, param)
         end
@@ -194,7 +222,9 @@ module SevenZipRuby
     #
     # ==== Args
     # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
-    # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+    # +param+ :: Optional hash parameter.
+    #            <tt>:password</tt> key specifies password of this archive.
+    #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
     #
     # ==== Examples
     #   File.open("filename.7z", "wb") do |file|
@@ -217,9 +247,13 @@ module SevenZipRuby
 
     # Open 7zip archive file to create.
     #
+    # <tt>close</tt> method must be called later.
+    #
     # ==== Args
     # +filename+ :: 7zip archive filename.
-    # +param+ :: Optional hash parameter. <tt>:password</tt> key represents password of this archive.
+    # +param+ :: Optional hash parameter.
+    #            <tt>:password</tt> key specifies password of this archive.
+    #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
     #
     # ==== Examples
     #   szw = SevenZipRuby::SevenZipWriter.new
