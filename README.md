@@ -148,6 +148,17 @@ File.open("filename.7z", "rb") do |file|
 end
 ```
 
+You can also create a self extracting archive for Windows.
+
+```ruby
+File.open("filename.exe", "rb") do |file|
+  # :gui and :console can be specified as :sfx parameter.
+  SevenZipRuby::Writer.open(file, sfx: :gui) do |szr|
+    szr.add_data "file content", "file.txt"
+  end
+end
+```
+
 ### Set compression mode
 
 7zip supports LZMA, LZMA2, PPMD, BZIP2, DEFLATE and COPY.  
