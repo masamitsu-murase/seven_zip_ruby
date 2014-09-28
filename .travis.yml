@@ -1,8 +1,8 @@
 language: ruby
 rvm:
   - "2.0.0"
-  - "2.1.1"
-  - "rbx-2"
+  - "2.1.2"
+  - "rbx-2.1.1"
   - "ruby-head"
 matrix:
   allow_failures:
