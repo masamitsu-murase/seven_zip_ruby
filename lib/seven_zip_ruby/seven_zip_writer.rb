@@ -62,12 +62,12 @@ module SevenZipRuby
     # Encoding used for path string in 7zip archive.
     PATH_ENCODING = Encoding::UTF_8
 
-    # Files for self extraction.  # :nodoc:
+    # Files for self extraction.
     SFX_FILE_LIST = {
       default: File.expand_path("../7z.sfx", __FILE__),
       gui:     File.expand_path("../7z.sfx", __FILE__),
       console: File.expand_path("../7zCon.sfx", __FILE__)
-    }
+    }  # :nodoc:
 
     OPEN_PARAM_LIST = [ :password, :sfx ]  # :nodoc:
 
@@ -80,8 +80,8 @@ module SevenZipRuby
       #
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
-      # +param+ :: Optional hash parameter.
-      #            <tt>:password</tt> key specifies password of this archive.
+      # +param+ :: Optional hash parameter.  
+      #            <tt>:password</tt> key specifies password of this archive.  
       #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
@@ -130,8 +130,8 @@ module SevenZipRuby
       #
       # ==== Args
       # +filename+ :: 7zip archive filename.
-      # +param+ :: Optional hash parameter.
-      #            <tt>:password</tt> key specifies password of this archive.
+      # +param+ :: Optional hash parameter.  
+      #            <tt>:password</tt> key specifies password of this archive.  
       #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
@@ -169,8 +169,8 @@ module SevenZipRuby
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
       # +dir+ :: Directory to be added to the 7zip archive. <b><tt>dir</tt></b> must be a <b>relative path</b>.
-      # +param+ :: Optional hash parameter.
-      #            <tt>:password</tt> key specifies password of this archive.
+      # +param+ :: Optional hash parameter.  
+      #            <tt>:password</tt> key specifies password of this archive.  
       #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
@@ -195,8 +195,8 @@ module SevenZipRuby
       # ==== Args
       # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
       # +file+ :: File to be added to the 7zip archive. <b><tt>file</tt></b> must be a <b>relative path</b>.
-      # +param+ :: Optional hash parameter.
-      #            <tt>:password</tt> key specifies password of this archive.
+      # +param+ :: Optional hash parameter.  
+      #            <tt>:password</tt> key specifies password of this archive.  
       #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
       #
       # ==== Examples
@@ -222,8 +222,8 @@ module SevenZipRuby
     #
     # ==== Args
     # +stream+ :: Output stream to write 7zip archive. <tt>stream.write</tt> is needed.
-    # +param+ :: Optional hash parameter.
-    #            <tt>:password</tt> key specifies password of this archive.
+    # +param+ :: Optional hash parameter.  
+    #            <tt>:password</tt> key specifies password of this archive.  
     #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
     #
     # ==== Examples
@@ -251,8 +251,8 @@ module SevenZipRuby
     #
     # ==== Args
     # +filename+ :: 7zip archive filename.
-    # +param+ :: Optional hash parameter.
-    #            <tt>:password</tt> key specifies password of this archive.
+    # +param+ :: Optional hash parameter.  
+    #            <tt>:password</tt> key specifies password of this archive.  
     #            <tt>:sfx</tt> key specifies Self Extracting mode. <tt>:gui</tt> and <tt>:console</tt> can be used. <tt>true</tt> is same as <tt>:gui</tt>.
     #
     # ==== Examples
