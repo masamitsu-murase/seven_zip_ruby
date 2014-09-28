@@ -406,6 +406,37 @@ describe SevenZipRuby do
       end
     end
 
+    example "create a sfx archive" do
+      time = Time.now
+
+      output = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output) do |szw|
+        szw.add_data("hogehoge", "hoge.txt", ctime: time, atime: time, mtime: time)
+      end
+
+      output1 = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output1, sfx: true) do |szw|
+        szw.add_data("hogehoge", "hoge.txt", ctime: time, atime: time, mtime: time)
+      end
+
+      output2 = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output2, sfx: :gui) do |szw|
+        szw.add_data("hogehoge", "hoge.txt", ctime: time, atime: time, mtime: time)
+      end
+
+      output3 = StringIO.new("")
+      SevenZipRuby::SevenZipWriter.open(output3, sfx: :console) do |szw|
+        szw.add_data("hogehoge", "hoge.txt", ctime: time, atime: time, mtime: time)
+      end
+
+      gui = File.open(SevenZipRuby::SevenZipWriter::SFX_FILE_LIST[:gui], "rb", &:read)
+      console = File.open(SevenZipRuby::SevenZipWriter::SFX_FILE_LIST[:console], "rb", &:read)
+
+      expect(output1.string).to eq gui + output.string
+      expect(output2.string).to eq gui + output.string
+      expect(output3.string).to eq console + output.string
+    end
+
     [ true, false ].each do |use_native_input_file_stream|
       example "add_directory: use_native_input_file_stream=#{use_native_input_file_stream}" do
         SevenZipRuby::SevenZipWriter.use_native_input_file_stream = use_native_input_file_stream
