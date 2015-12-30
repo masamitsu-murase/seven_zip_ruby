@@ -206,7 +206,7 @@ describe SevenZipRuby do
       example "invalid index" do
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
           SevenZipRuby::SevenZipReader.open(file) do |szr|
-            expect{ szr.extract_data(nil) }.to raise_error (ArgumentError)
+            expect{ szr.extract_data(nil) }.to raise_error(ArgumentError)
           end
         end
       end
@@ -214,22 +214,22 @@ describe SevenZipRuby do
       example "invalid index for entry" do
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
           SevenZipRuby::SevenZipReader.open(file) do |szr|
-            expect{ szr.entry("a") }.to raise_error
+            expect{ szr.entry("a") }.to raise_error(TypeError)
           end
         end
       end
 
       example "invalid password" do
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error
+          expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error(StandardError)
         end
 
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file, password: "a"){ |szr| szr.extract_data(1) } }.to raise_error
+          expect{ SevenZipRuby::Reader.open(file, password: "a"){ |szr| szr.extract_data(1) } }.to raise_error(SevenZipRuby::InvalidArchive)
         end
 
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file, password: :InvalidType){ |szr| szr.extract_data(1) } }.to raise_error
+          expect{ SevenZipRuby::Reader.open(file, password: :InvalidType){ |szr| szr.extract_data(1) } }.to raise_error(SevenZipRuby::InvalidArchive)
         end
       end
 
@@ -303,8 +303,8 @@ describe SevenZipRuby do
       end
 
       example "clone and dup cannot be called." do
-        expect{ SevenZipRuby::SevenZipReader.new.clone }.to raise_error
-        expect{ SevenZipRuby::SevenZipReader.new.dup }.to raise_error
+        expect{ SevenZipRuby::SevenZipReader.new.clone }.to raise_error(NoMethodError)
+        expect{ SevenZipRuby::SevenZipReader.new.dup }.to raise_error(NoMethodError)
       end
 
     end
@@ -392,7 +392,7 @@ describe SevenZipRuby do
         SevenZipRuby::SevenZipReader.open(output, { password: "invalid password" }) do |szr|
           szr.extract_data(0)
         end
-      }.to raise_error
+      }.to raise_error(SevenZipRuby::InvalidArchive)
 
 
       output = StringIO.new("")
@@ -630,11 +630,11 @@ describe SevenZipRuby do
       end
 
       example "invalid method" do
-        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).method = "Unknown" }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).method = "Unknown" }.to raise_error(ArgumentError)
       end
 
       example "invalid level" do
-        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).level = 2 }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.open(StringIO.new("")).level = 2 }.to raise_error(ArgumentError)
       end
 
       example "add_data/mkdir/compress/close before open" do
@@ -660,8 +660,8 @@ describe SevenZipRuby do
       end
 
       example "clone and dup cannot be called." do
-        expect{ SevenZipRuby::SevenZipWriter.new.clone }.to raise_error
-        expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error
+        expect{ SevenZipRuby::SevenZipWriter.new.clone }.to raise_error(NoMethodError)
+        expect{ SevenZipRuby::SevenZipWriter.new.dup }.to raise_error(NoMethodError)
       end
 
       if (false && RUBY_ENGINE == "ruby")
