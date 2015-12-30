@@ -1220,13 +1220,12 @@ STDMETHODIMP ArchiveExtractCallback::GetStream(UInt32 index, ISequentialOutStrea
     bool ret = m_archive->runRubyAction([&](){
         rb_stream = rb_funcall(proc, INTERN("call"), 2,
                                ID2SYM(INTERN("stream")), m_archive->entryInfo(index));
+        m_archive->setProcessingStream(rb_stream, index, askExtractMode);
     });
     if (!ret){
         m_archive->clearProcessingStream();
         return E_FAIL;
     }
-
-    m_archive->setProcessingStream(rb_stream, index, askExtractMode);
 
     OutStream *stream = new OutStream(rb_stream, m_archive);
     CMyComPtr<OutStream> ptr(stream);
@@ -1434,13 +1433,13 @@ STDMETHODIMP ArchiveUpdateCallback::GetStream(UInt32 index, ISequentialInStream 
         }else{
             rb_stream = rb_ary_entry(ret_array, 1);
         }
+
+        m_archive->setProcessingStream(rb_stream, index);
     });
     if (!ret){
         m_archive->clearProcessingStream();
         return E_FAIL;
     }
-
-    m_archive->setProcessingStream(rb_stream, index);
 
     if (NIL_P(rb_stream) && !(filepath.empty())){
         FileInStream *stream = new FileInStream(filepath, m_archive);
