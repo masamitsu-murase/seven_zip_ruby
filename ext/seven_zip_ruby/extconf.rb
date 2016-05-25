@@ -59,6 +59,7 @@ def sample_cpp_source
   #  - lambda
   #  - std::function
   #  - std::array
+  #  - memset_s defined, on Darwin and BSD
   return <<'EOS'
 #include <functional>
 #include <algorithm>
@@ -66,6 +67,11 @@ def sample_cpp_source
 #include <iostream>
 
 #include <ruby.h>
+
+// see the test on memset_s below, which is a purely BSD thing
+#if defined(__APPLE__) || defined(BSD)
+#include <string.h>
+#endif
 
 void test()
 {
@@ -84,6 +90,11 @@ void test()
     });
 
     std::for_each(var_list.begin(), var_list.end(), [](int num){ std::cout << num << std::endl; });
+
+#if defined(__APPLE__) || defined(BSD)
+    char str[] = "imareallycoolstringright";
+    memset_s(str, sizeof str, 'b', 5);
+#endif
 }
 EOS
 end
@@ -135,8 +146,8 @@ def main
     # MinGW
     $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
 
-    cpp0x_flag = [ "", "-std=c++11", "-std=gnu++11", "-std=c++0x", "-std=gnu++0x" ].find do |opt|
-      next try_compile(sample_cpp_source, "#{opt} -x c++ ")
+    cpp0x_flag = [ "", "-std=gnu++11", "-std=c++11", "-std=gnu++0x", "-std=c++0x" ].find do |opt|
+      try_compile(sample_cpp_source, "#{opt} -x c++ ")
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
@@ -150,8 +161,11 @@ def main
       end
     end
 
-    cpp0x_flag = [ "", "-std=c++11", "-std=gnu++11", "-std=c++0x", "-std=gnu++0x" ].find do |opt|
-      next (try_compile(sample_cpp_source, "#{opt} -x c++ ") || try_compile(sample_cpp_source, "#{opt} "))
+    possible_cpp0x_flags = [ "", "-std=gnu++11", "-std=c++11", "-std=gnu++0x", "-std=c++0x" ].map do |opt|
+      ["#{opt} -x c++ ", "#{opt} "]
+    end.flatten
+    cpp0x_flag = possible_cpp0x_flags.find do |opt|
+      try_compile(sample_cpp_source, opt)
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
