@@ -1,18 +1,21 @@
 language: ruby
 rvm:
-  - "2.0.0"
-  - "2.1.2"
-  - "rbx-2.1.1"
+  - "2.0"
+  - "2.1"
+  - "2.2"
+  - "2.3.1"
+  - "rbx-2.2.7"
   - "ruby-head"
 matrix:
   allow_failures:
-    - rvm: "rbx-2.1.1"
+    - rvm: "rbx-2.2.7"
     - rvm: "ruby-head"
 notifications:
   email: false
 cache:
   - apt
 before_install:
+  - gem update bundler
   - bundle install --path=vendor/bundle
   - sudo apt-get install p7zip-full
 install: bundle exec rake build_local
