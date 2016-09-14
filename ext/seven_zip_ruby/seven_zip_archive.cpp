@@ -13,8 +13,9 @@
 
 #define INTERN(const_str) rb_intern2(const_str, sizeof(const_str) - 1)
 
+// For https://bugs.ruby-lang.org/issues/11962
 #ifndef RARRAY_CONST_PTR
-#define RARRAY_CONST_PTR(index_list) RARRAY_PTR (index_list)
+#define RARRAY_CONST_PTR(index_list) RARRAY_PTR(index_list)
 #endif
 
 ////////////////////////////////////////////////////////////////
