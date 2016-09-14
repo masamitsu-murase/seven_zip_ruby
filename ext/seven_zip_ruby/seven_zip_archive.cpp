@@ -505,7 +505,7 @@ VALUE ArchiveReader::extractFiles(VALUE index_list, VALUE callback_proc)
     fillEntryInfo();
 
     std::vector<UInt32> list(RARRAY_LEN(index_list));
-    std::transform(RARRAY_PTR(index_list), RARRAY_PTR(index_list) + RARRAY_LEN(index_list),
+    std::transform(RARRAY_CONST_PTR(index_list), RARRAY_CONST_PTR(index_list) + RARRAY_LEN(index_list),
                    list.begin(), [](VALUE num){ return NUM2ULONG(num); });
 
     HRESULT ret;
