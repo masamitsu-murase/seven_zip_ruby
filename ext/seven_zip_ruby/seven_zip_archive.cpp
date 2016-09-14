@@ -13,6 +13,10 @@
 
 #define INTERN(const_str) rb_intern2(const_str, sizeof(const_str) - 1)
 
+// For https://bugs.ruby-lang.org/issues/11962
+#ifndef RARRAY_CONST_PTR
+#define RARRAY_CONST_PTR(index_list) RARRAY_PTR(index_list)
+#endif
 
 ////////////////////////////////////////////////////////////////
 namespace SevenZip
@@ -505,7 +509,7 @@ VALUE ArchiveReader::extractFiles(VALUE index_list, VALUE callback_proc)
     fillEntryInfo();
 
     std::vector<UInt32> list(RARRAY_LEN(index_list));
-    std::transform(RARRAY_PTR(index_list), RARRAY_PTR(index_list) + RARRAY_LEN(index_list),
+    std::transform(RARRAY_CONST_PTR(index_list), RARRAY_CONST_PTR(index_list) + RARRAY_LEN(index_list),
                    list.begin(), [](VALUE num){ return NUM2ULONG(num); });
 
     HRESULT ret;
