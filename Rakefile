@@ -9,7 +9,15 @@ task :build_platform => [ :pre_platform, :build, :post_platform ]
 
 task :pre_platform do
   FileUtils.mv("seven_zip_ruby.gemspec", "seven_zip_ruby.gemspec.bak")
-  FileUtils.cp("resources/seven_zip_ruby.gemspec.platform", "seven_zip_ruby.gemspec")
+
+  versions = Dir.glob("lib/seven_zip_ruby/*").select{ |i| File.directory?(i) }.map{ |i| i.split("/").last }.sort_by{ |i| i.split(".").map(&:to_i) }
+  min_version = versions.first + ".0"
+  max_version = versions.last.split(".").first + "." + (versions.last.split(".").last.to_i + 1).to_s + ".0"
+  gemspec = File.open("resources/seven_zip_ruby.gemspec.platform", "r", &:read)
+    .gsub("SPEC_REQUIRED_RUBY_VERSION"){ "spec.required_ruby_version = [ '>= #{min_version}', '< #{max_version}' ]" }
+  File.open("seven_zip_ruby.gemspec", "w") do |f|
+    f.write(gemspec)
+  end
 end
 
 task :post_platform do

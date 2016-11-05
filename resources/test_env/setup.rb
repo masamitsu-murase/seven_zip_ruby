@@ -19,17 +19,19 @@ end
 class RubyEnv
   class << self
     def init_env_var
-      lib = [ "C:\\OpenSSL-Win32\\lib", "D:\\my_program\\GnuWin32\\lib" ]
+      lib = [ "C:\\OpenSSL-Win32\\lib", "C:\\my_program\\GnuWin32\\lib", "D:\\my_program\\GnuWin32\\lib" ]
       lib.push(ENV["LIB"]) if (ENV["LIB"])
       ENV["LIB"] = lib.join(";")
 
-      include = [ "C:\\OpenSSL-Win32\\include", "D:\\my_program\\GnuWin32\\include" ]
+      include = [ "C:\\OpenSSL-Win32\\include", "C:\\my_program\\GnuWin32\\include", "D:\\my_program\\GnuWin32\\include" ]
       include.push(ENV["INCLUDE"]) if (ENV["INCLUDE"])
       ENV["INCLUDE"] = include.join(";")
 
-      path = [ "C:\\Program Files\\7-Zip", "D:\\my_program\\GnuWin32\\bin", "D:\\my_program\\git\\bin" ]
+      path = [ "C:\\Program Files\\7-Zip", "C:\\my_program\\GnuWin32\\bin", "C:\\my_program\\git\\bin", "D:\\my_program\\GnuWin32\\bin", "D:\\my_program\\git\\bin" ]
       path.push(ENV["PATH"]) if (ENV["PATH"])
       ENV["PATH"] = path.join(";")
+
+      @@cache = {}
     end
   end
 
@@ -38,9 +40,14 @@ class RubyEnv
     @ruby_dir = File.expand_path(File.join(dir, "ruby"), BASE_DIR)
   end
 
-  def download(url)
-    log("Download #{url}...")
-    url = URI.parse(url)
+  def download(url_str)
+    if @@cache[url_str]
+      log("Using data in cache...")
+      return @@cache[url_str]
+    end
+
+    log("Download #{url_str}...")
+    url = URI.parse(url_str)
     case(url.scheme)
     when "http"
       res = Net::HTTP.start(url.host, url.port) do |http|
@@ -64,6 +71,7 @@ class RubyEnv
       FileUtils.rmtree(tempfilename)
     end
     log("  Done.")
+    @@cache[url_str] = data
     return data
   end
 
@@ -127,7 +135,7 @@ class RubyEnv
 
   def my_system_with_precommand(str)
     Tempfile.open([ "temp", ".bat" ], Dir.pwd) do |temp|
-      temp.puts("@echo off")
+#      temp.puts("@echo off")
       temp.puts(@precommand) if (@precommand)
       temp.puts(str)
       temp.close
@@ -141,8 +149,34 @@ class RubyEnv
     gem_env(SEVEN_ZIP_DIR) do
       FileUtils.rmtree("Gemfile.lock") if (File.exist?("Gemfile.lock"))
 
-      log("Install bundler...")
-      my_system_with_precommand("gem install bundler --no-rdoc --no-ri")
+      log("Updating rubygems...")
+      begin
+        my_system_with_precommand("gem update --system --no-rdoc --no-ri")
+
+        log("Install bundler...")
+        my_system_with_precommand("gem install bundler --no-rdoc --no-ri")
+      rescue
+        log("Updating rubygems again...")
+        Tempfile.open([ "temp", ".cfg" ], Dir.pwd) do |temp|
+          str = <<'EOS'
+---
+:backtrace: false
+:bulk_threshold: 1000
+:sources:
+- http://rubygems.org/
+:update_sources: true
+:verbose: true
+EOS
+          temp.puts str
+          temp.close
+          my_system_with_precommand("gem update --system --no-rdoc --no-ri --config-file #{File.basename(temp.path)}")
+          temp.close!
+        end
+
+        log("Install bundler again...")
+        my_system_with_precommand("gem install bundler --no-rdoc --no-ri")
+      end
+
       log("  Done")
       log("Bundle install...")
       my_system_with_precommand("bundle install --jobs=4")
@@ -311,10 +345,15 @@ ruby220_mingw32 =
   RubyEnvMinGW.new("ruby220/mingw32",
                "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.2.3-i386-mingw32.7z",
                "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
+ruby230_mingw32 =
+  RubyEnvMinGW.new("ruby230/mingw32",
+               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.3.1-i386-mingw32.7z",
+               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
 ruby_env_list.push({
                      "2.0" => ruby200_mingw32,
                      "2.1" => ruby210_mingw32,
-                     "2.2" => ruby220_mingw32
+                     "2.2" => ruby220_mingw32,
+                     "2.3" => ruby230_mingw32
                    })
 
 ruby200_mingw32_64 =
@@ -329,29 +368,34 @@ ruby220_mingw32_64 =
   RubyEnvMinGW.new("ruby220/mingw32_64",
                "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.2.3-x64-mingw32.7z",
                "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
+ruby230_mingw32_64 =
+  RubyEnvMinGW.new("ruby230/mingw32_64",
+               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.3.1-x64-mingw32.7z",
+               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
 ruby_env_list.push({
                      "2.0" => ruby200_mingw32_64,
                      "2.1" => ruby210_mingw32_64,
-                     "2.2" => ruby220_mingw32_64
+                     "2.2" => ruby220_mingw32_64,
+                     "2.3" => ruby230_mingw32_64
                    })
 
-ruby200_vc2010 =
-  RubyEnvVC2010.new("ruby200/vc2010",
-                "http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p648.tar.gz",
-                "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-ruby210_vc2010 =
-  RubyEnvVC2010.new("ruby210/vc2010",
-                "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.8.tar.gz",
-                "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
+# ruby200_vc2010 =
+#   RubyEnvVC2010.new("ruby200/vc2010",
+#                 "http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p648.tar.gz",
+#                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
+# ruby210_vc2010 =
+#   RubyEnvVC2010.new("ruby210/vc2010",
+#                 "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.8.tar.gz",
+#                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
 # ruby220_vc2010 =
 #   RubyEnvVC2010.new("ruby220/vc2010",
 #                 "http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.4.tar.gz",
 #                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-ruby_env_list.push({
-                     "2.0" => ruby200_vc2010,
-                     "2.1" => ruby210_vc2010
-#                      "2.2" => ruby220_vc2010
-                   })
+# ruby_env_list.push({
+#                      "2.0" => ruby200_vc2010,
+#                      "2.1" => ruby210_vc2010
+# #                      "2.2" => ruby220_vc2010
+#                    })
 
 ruby_env_list.map(&:values).flatten.each do |ruby|
   ruby.setup
