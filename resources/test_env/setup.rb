@@ -135,7 +135,7 @@ class RubyEnv
 
   def my_system_with_precommand(str)
     Tempfile.open([ "temp", ".bat" ], Dir.pwd) do |temp|
-#      temp.puts("@echo off")
+      temp.puts("@echo off")
       temp.puts(@precommand) if (@precommand)
       temp.puts(str)
       temp.close
