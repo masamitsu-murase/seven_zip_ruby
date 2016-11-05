@@ -385,6 +385,7 @@ class ArchiveOpenCallback : public IArchiveOpenCallback, public ICryptoGetTextPa
   public:
     ArchiveOpenCallback(ArchiveReader *archive);
     ArchiveOpenCallback(ArchiveReader *archive, const std::string &password);
+    virtual ~ArchiveOpenCallback() {}
 
     MY_UNKNOWN_IMP2(IArchiveOpenCallback, ICryptoGetTextPassword)
 
@@ -408,6 +409,7 @@ class ArchiveExtractCallback : public IArchiveExtractCallback, public ICryptoGet
   public:
     ArchiveExtractCallback(ArchiveReader *archive);
     ArchiveExtractCallback(ArchiveReader *archive, const std::string &password);
+    virtual ~ArchiveExtractCallback() {}
 
     MY_UNKNOWN_IMP2(IArchiveExtractCallback, ICryptoGetTextPassword)
 
@@ -436,6 +438,7 @@ class ArchiveUpdateCallback : public IArchiveUpdateCallback, public ICryptoGetTe
   public:
     ArchiveUpdateCallback(ArchiveWriter *archive);
     ArchiveUpdateCallback(ArchiveWriter *archive, const std::string &password);
+    virtual ~ArchiveUpdateCallback() {}
 
     MY_UNKNOWN_IMP2(IArchiveUpdateCallback, ICryptoGetTextPassword2)
 
@@ -466,6 +469,7 @@ class InStream : public IInStream, public CMyUnknownImp
 {
   public:
     InStream(VALUE stream, ArchiveBase *archive);
+    virtual ~InStream() {}
 
     MY_UNKNOWN_IMP1(IInStream)
 
@@ -481,7 +485,7 @@ class FileInStream : public IInStream, public CMyUnknownImp
 {
   public:
     FileInStream(const std::string &filename, ArchiveBase *archive);
-    ~FileInStream();
+    virtual ~FileInStream();
 
     MY_UNKNOWN_IMP1(IInStream)
 
@@ -502,6 +506,7 @@ class OutStream : public IOutStream, public CMyUnknownImp
 {
   public:
     OutStream(VALUE stream, ArchiveBase *archive);
+    virtual ~OutStream() {}
 
     MY_UNKNOWN_IMP1(IOutStream)
 
@@ -520,6 +525,7 @@ class FileOutStream : public IOutStream, public CMyUnknownImp
 {
   public:
     FileOutStream(const std::string &filename, ArchiveBase *archive);
+    virtual ~FileOutStream() {}
 
     MY_UNKNOWN_IMP1(IOutStream)
 
