@@ -477,7 +477,7 @@ module SevenZipRuby
             path = arg_path.expand_path(base_dir)
             path.mkpath
             set_file_attribute(path.to_s, arg.attrib) if (arg.attrib)
-            path.utime(arg.atime || path.atime, arg.mtime || path.mtime)
+            path.utime(arg.atime || path.atime, arg.mtime || path.mtime) rescue nil
           end
           next ret
 
@@ -488,7 +488,7 @@ module SevenZipRuby
           unless (arg[:info].anti?)
             path = Pathname(arg[:info].path).expand_path(base_dir)
             set_file_attribute(path.to_s, arg[:info].attrib) if (arg[:info].attrib)
-            path.utime(arg[:info].atime || path.atime, arg[:info].mtime || path.mtime)
+            path.utime(arg[:info].atime || path.atime, arg[:info].mtime || path.mtime) rescue nil
           end
         end
       end
