@@ -1,430 +1,90 @@
 
-require("fileutils")
-require("net/http")
-require("net/ftp")
-require("uri")
 require("seven_zip_ruby")
-require("zlib")
-require("archive/tar/minitar")
-require("tempfile")
-
-BASE_DIR = File.expand_path("../../../../seven_zip_ruby_ruby_temp", __FILE__)
-SEVEN_ZIP_DIR = File.expand_path("../../..", __FILE__)
-COMPLETE_FILE = "complete.txt"
-
-def log(str)
-  puts str
-end
-
-class RubyEnv
-  class << self
-    def init_env_var
-      lib = [ "C:\\OpenSSL-Win32\\lib", "C:\\my_program\\GnuWin32\\lib", "D:\\my_program\\GnuWin32\\lib" ]
-      lib.push(ENV["LIB"]) if (ENV["LIB"])
-      ENV["LIB"] = lib.join(";")
-
-      include = [ "C:\\OpenSSL-Win32\\include", "C:\\my_program\\GnuWin32\\include", "D:\\my_program\\GnuWin32\\include" ]
-      include.push(ENV["INCLUDE"]) if (ENV["INCLUDE"])
-      ENV["INCLUDE"] = include.join(";")
-
-      path = [ "C:\\Program Files\\7-Zip", "C:\\my_program\\GnuWin32\\bin", "C:\\my_program\\git\\bin", "D:\\my_program\\GnuWin32\\bin", "D:\\my_program\\git\\bin" ]
-      path.push(ENV["PATH"]) if (ENV["PATH"])
-      ENV["PATH"] = path.join(";")
-
-      @@cache = {}
-    end
-  end
-
-  def initialize(dir)
-    @dir = dir
-    @ruby_dir = File.expand_path(File.join(dir, "ruby"), BASE_DIR)
-  end
-
-  def download(url_str)
-    if @@cache[url_str]
-      log("Using data in cache...")
-      return @@cache[url_str]
-    end
-
-    log("Download #{url_str}...")
-    url = URI.parse(url_str)
-    case(url.scheme)
-    when "http"
-      res = Net::HTTP.start(url.host, url.port) do |http|
-        http.get(url.request_uri)
-      end
-      if res.kind_of? Net::HTTPRedirection
-        url = URI.parse(res['location'])
-        res = Net::HTTP.start(url.host, url.port) do |http|
-          http.get(url.request_uri)
-        end
-      end
-      data = res.body
-    when "ftp"
-      tempfilename = "hoge.tar.gz"
-      Net::FTP.open(url.host) do |ftp|
-        ftp.login
-        ftp.passive = true
-        ftp.getbinaryfile(url.path, tempfilename, 1024)
-      end
-      data = File.open(tempfilename, "rb", &:read)
-      FileUtils.rmtree(tempfilename)
-    end
-    log("  Done.")
-    @@cache[url_str] = data
-    return data
-  end
-
-  def normalize_dir(dir)
-    entries = Dir.entries(dir).select{ |i| i != ".." && i != "." }
-    if (entries.size == 1)
-      FileUtils.mv(File.join(dir, entries[0]), "hoge")
-      FileUtils.rmdir(dir)
-      FileUtils.mv("hoge", dir)
-    end
-  end
-
-  def extract(data, dir)
-    log("Extract to #{dir}...")
-    io = StringIO.new(data)
-    SevenZipRuby::SevenZipReader.open(io) do |szr|
-      szr.extract_all(dir)
-    end
-    normalize_dir(dir)
-    log("  Done.")
-  end
-
-  def extract_tar_gz(data, dir)
-    log("Extract tar.gz to #{dir}")
-    tgz = Zlib::GzipReader.new(StringIO.new(data))
-    Archive::Tar::Minitar.unpack(tgz, dir)
-    normalize_dir(dir)
-    log("  Done.")
-  end
-
-  def set_path(path, &block)
-    path = Array(path)
-    old_path = ENV["PATH"]
-    begin
-      ENV["PATH"] = path.map{ |i| i.gsub("/"){ "\\" } }.join(";") + ";#{old_path}"
-      block.call
-    ensure
-      ENV["PATH"] = old_path
-    end
-  end
-
-  def gem_env(gem_dir, &block)
-    set_path(File.join(@ruby_dir, "bin")) do
-      old_make = ENV["MAKE"]
-      begin
-        ENV["MAKE"] = make_command
-
-        Dir.chdir(gem_dir) do
-          block.call
-        end
-      ensure
-        ENV["MAKE"] = old_make
-      end
-    end
-  end
-
-  def my_system(str)
-    ret = system(str)
-    raise "system error #{str}" unless (ret)
-  end
-
-  def my_system_with_precommand(str)
-    Tempfile.open([ "temp", ".bat" ], Dir.pwd) do |temp|
-      temp.puts("@echo off")
-      temp.puts(@precommand) if (@precommand)
-      temp.puts(str)
-      temp.close
-      ret = system(File.basename(temp.path))
-      temp.close!
-      raise "system error #{str}" unless (ret)
-    end
-  end
-
-  def bundler_install
-    gem_env(SEVEN_ZIP_DIR) do
-      FileUtils.rmtree("Gemfile.lock") if (File.exist?("Gemfile.lock"))
-
-      log("Updating rubygems...")
-      begin
-        my_system_with_precommand("gem update --system --no-rdoc --no-ri")
-
-        log("Install bundler...")
-        my_system_with_precommand("gem install bundler --no-rdoc --no-ri")
-      rescue
-        log("Updating rubygems again...")
-        Tempfile.open([ "temp", ".cfg" ], Dir.pwd) do |temp|
-          str = <<'EOS'
----
-:backtrace: false
-:bulk_threshold: 1000
-:sources:
-- http://rubygems.org/
-:update_sources: true
-:verbose: true
-EOS
-          temp.puts str
-          temp.close
-          my_system_with_precommand("gem update --system --no-rdoc --no-ri --config-file #{File.basename(temp.path)}")
-          temp.close!
-        end
-
-        log("Install bundler again...")
-        my_system_with_precommand("gem install bundler --no-rdoc --no-ri")
-      end
-
-      log("  Done")
-      log("Bundle install...")
-      my_system_with_precommand("bundle install --jobs=4")
-      log("  Done")
-    end
-  end
-
-  def rake(rake_command)
-    gem_env(SEVEN_ZIP_DIR) do
-      FileUtils.rmtree("Gemfile.lock") if (File.exist?("Gemfile.lock"))
-
-      log("Rake #{rake_command}...")
-      my_system_with_precommand("bundle exec rake #{rake_command}")
-      log("  Done")
-    end
-  end
-
-  def rspec
-    gem_env(SEVEN_ZIP_DIR) do
-      FileUtils.rmtree("Gemfile.lock") if (File.exist?("Gemfile.lock"))
-
-      log("Rspec spec/seven_zip_ruby_spec.rb")
-      my_system_with_precommand("bundle exec rspec spec/seven_zip_ruby_spec.rb")
-      log("  Done")
-    end
-  end
-end
-
-class RubyEnvMinGW < RubyEnv
-  def initialize(dir, ruby_url, devkit_url)
-    super(dir)
-    @ruby_url = ruby_url
-    @devkit_url = devkit_url
-
-    @devkit_dir = File.expand_path(File.join(@dir, "devkit"), BASE_DIR)
-    @precommand = "call \"#{File.join(@devkit_dir, 'devkitvars.bat')}\""
-  end
-
-  def make_command
-    return "make"
-  end
-
-  def setup
-    setup_mingw(@dir, @ruby_url, @devkit_url)
-  end
-
-  def register_devkit(devkit_dir)
-    Dir.chdir(devkit_dir) do
-      File.open("config.yml", "w") do |file|
-        str = <<"EOS"
----
-- #{@ruby_dir}
-EOS
-        file.puts(str)
-      end
-
-      log("Register devkit...")
-      my_system("\"#{File.join(@ruby_dir, 'bin', 'ruby.exe')}\" dk.rb install")
-      log("  Done")
-    end
-  end
-
-  def setup_mingw(dir, ruby_url, devkit_url)
-    dir = File.expand_path(dir, BASE_DIR)
-
-    complete_file = File.expand_path(COMPLETE_FILE, dir)
-    if (File.exist?(complete_file))
-      log("MinGW #{dir} is found in local.")
-      return
-    end
-
-    FileUtils.rmtree(dir) if (File.exist?(dir))
-
-    FileUtils.mkpath(dir)
-
-    Dir.chdir(dir) do
-      data = download(ruby_url)
-      extract(data, @ruby_dir)
-
-      data = download(devkit_url)
-      extract(data, @devkit_dir)
-
-      register_devkit(@devkit_dir)
-
-      bundler_install
-
-      FileUtils.touch(COMPLETE_FILE)
-    end
-  end
-end
-
-class RubyEnvVC2010 < RubyEnv
-  def initialize(dir, ruby_url, vcvars_path)
-    super(dir)
-    @ruby_url = ruby_url
-    @vcvars_path = vcvars_path
-
-    @precommand = "call \"#{vcvars_path}\""
-  end
-
-  def make_command
-    return "nmake"
-  end
-
-  def setup
-    setup_vc2010(@dir, @ruby_url, @vcvars_path)
-  end
-
-  def setup_vc2010(dir, ruby_url, vcvars_path)
-    dir = File.expand_path(dir, BASE_DIR)
-
-    complete_file = File.expand_path(COMPLETE_FILE, dir)
-    if (File.exist?(complete_file))
-      log("VC2010 #{dir} is found in local.")
-      return
-    end
-
-    FileUtils.rmtree(dir) if (File.exist?(dir))
-
-    FileUtils.mkpath(dir)
-
-    Dir.chdir(dir) do
-      ruby_src_dir = "ruby_src"
-
-      data = download(ruby_url)
-      extract_tar_gz(data, ruby_src_dir)
-
-      File.open("build_ruby.bat", "w") do |file|
-        str = <<"EOS"
-call "#{vcvars_path}"
-cd /d "#{File.join(dir, ruby_src_dir)}"
-md build
-cd build
-call ..\\win32\\configure.bat --disable-install-doc --prefix=#{@ruby_dir}
-nmake
-nmake install
-EOS
-        file.puts(str)
-      end
-      my_system("build_ruby.bat")
-
-#      FileUtils.rmtree(ruby_src_dir)
-
-      bundler_install
-
-      FileUtils.touch(COMPLETE_FILE)
-    end
-  end
-end
-
-
-
-RubyEnv.init_env_var
-
-ruby_env_list = []
-
-ruby200_mingw32 =
-  RubyEnvMinGW.new("ruby200/mingw32",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p647-i386-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
-ruby210_mingw32 =
-  RubyEnvMinGW.new("ruby210/mingw32",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.1.7-i386-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
-ruby220_mingw32 =
-  RubyEnvMinGW.new("ruby220/mingw32",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.2.3-i386-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
-ruby230_mingw32 =
-  RubyEnvMinGW.new("ruby230/mingw32",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.3.1-i386-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-32-4.7.2-20130224-1151-sfx.exe")
-ruby_env_list.push({
-                     "2.0" => ruby200_mingw32,
-                     "2.1" => ruby210_mingw32,
-                     "2.2" => ruby220_mingw32,
-                     "2.3" => ruby230_mingw32
-                   })
-
-ruby200_mingw32_64 =
-  RubyEnvMinGW.new("ruby200/mingw32_64",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.0.0-p647-x64-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
-ruby210_mingw32_64 =
-  RubyEnvMinGW.new("ruby210/mingw32_64",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.1.7-x64-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
-ruby220_mingw32_64 =
-  RubyEnvMinGW.new("ruby220/mingw32_64",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.2.3-x64-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
-ruby230_mingw32_64 =
-  RubyEnvMinGW.new("ruby230/mingw32_64",
-               "http://dl.bintray.com/oneclick/rubyinstaller/ruby-2.3.1-x64-mingw32.7z",
-               "http://dl.bintray.com/oneclick/rubyinstaller/DevKit-mingw64-64-4.7.2-20130224-1432-sfx.exe")
-ruby_env_list.push({
-                     "2.0" => ruby200_mingw32_64,
-                     "2.1" => ruby210_mingw32_64,
-                     "2.2" => ruby220_mingw32_64,
-                     "2.3" => ruby230_mingw32_64
-                   })
-
-# ruby200_vc2010 =
-#   RubyEnvVC2010.new("ruby200/vc2010",
-#                 "http://cache.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p648.tar.gz",
-#                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-# ruby210_vc2010 =
-#   RubyEnvVC2010.new("ruby210/vc2010",
-#                 "http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.8.tar.gz",
-#                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-# ruby220_vc2010 =
-#   RubyEnvVC2010.new("ruby220/vc2010",
-#                 "http://cache.ruby-lang.org/pub/ruby/2.2/ruby-2.2.4.tar.gz",
-#                 "C:\\Program Files (x86)\\Microsoft Visual Studio 10.0\\VC\\bin\\vcvars32.bat")
-# ruby_env_list.push({
-#                      "2.0" => ruby200_vc2010,
-#                      "2.1" => ruby210_vc2010
-# #                      "2.2" => ruby220_vc2010
-#                    })
-
-ruby_env_list.map(&:values).flatten.each do |ruby|
-  ruby.setup
-end
-
-# Test
-ruby_env_list.map(&:values).flatten.each do |ruby|
+require("ruby_installer_manager")
+require("bundler")
+require("pathname")
+require("fileutils")
+
+TMP_DIR = Pathname(__dir__) + "tmp"
+SEVEN_ZIP_DIR = Pathname(__dir__).parent.parent
+
+def run_with_devkit(devkitvars_bat, command)
   begin
-    ruby.rake("build_local")
-    ruby.rspec
+    File.open("temp_bat.bat", "w") do |file|
+      bat_path = devkitvars_bat.to_s.gsub('/'){ '\\' }
+      file.puts "call \"#{bat_path}\""
+      file.puts command
+    end
+    system("temp_bat.bat")
   ensure
-    ruby.rake("build_local_clean")
+    Pathname("temp_bat.bat").rmtree
   end
 end
 
-# Create platform-specific gem.
-ruby_env_list.each do |ruby_vers|
-  bin_list = {}
-  ruby_vers.each do |ver, ruby|
-    begin
-      ruby.rake("build_local")
-      Dir.chdir(SEVEN_ZIP_DIR) do
-        bin_list[ver] = File.open("ext/seven_zip_ruby/seven_zip_archive.so", "rb", &:read)
+#================================================================
+am = RubyInstallerManager::AutoManager.create(TMP_DIR)
+
+# ruby_name_list_32 = [ "ruby2.3.3", "ruby2.2.6", "ruby2.1.9", "ruby2.0.0p648" ]
+ruby_name_list_32 = [ "ruby2.3.3" ]
+ruby_name_list_64 = ruby_name_list_32.map{ |i| i + "_64bit" }
+ruby_name_list = ruby_name_list_32 + ruby_name_list_64
+
+#================================================================
+# Prepare and install
+ruby_list = ruby_name_list.map do |ruby_name|
+  puts ruby_name
+  ruby = am.ruby_manager(ruby_name)
+  ruby.prepare
+  ruby.update_rubygems
+  next ruby
+end
+
+devkit_list = ruby_list.map{ |r| am.devkit_for_ruby(r) }.uniq
+
+devkit_list.each do |devkit|
+  puts devkit.name
+  devkit.prepare
+  devkit.install(am.rubies_for_devkit(devkit).map(&:dir))
+end
+
+Dir.chdir(SEVEN_ZIP_DIR) do
+  gemfile_lock = Pathname("Gemfile.lock")
+
+  ruby_list.each do |ruby|
+    puts ruby.name
+    ruby.update_rubygems
+    ruby.install_gem("bundler")
+    ruby.ruby_env do
+      begin
+        gemfile_lock.rmtree if gemfile_lock.exist?
+        system("bundle install")
+        ruby.run_with_devkit("bundle exec rake build_local", am.devkit_for_ruby(ruby))
+        system("bundle exec rspec spec/seven_zip_ruby_spec.rb")
+      ensure
+        ruby.run_with_devkit("bundle exec rake build_local_clean", am.devkit_for_ruby(ruby))
+        gemfile_lock.rmtree if gemfile_lock.exist?
       end
-    ensure
-      ruby.rake("build_local_clean")
     end
   end
-  Dir.chdir(SEVEN_ZIP_DIR) do
+
+  [ ruby_name_list_32, ruby_name_list_64 ].each do |name_list|
+    bin_list = {}
+    list = ruby_list.select{ |i| name_list.include?(i.name) }
+    next if list.empty?
+
+    list.each do |ruby|
+      ver = ruby.name.match(/^ruby([0-9]+\.[0-9]+)/)[1]
+      ruby.ruby_env do
+        begin
+          ruby.run_with_devkit("bundle exec rake build_local", am.devkit_for_ruby(ruby))
+          bin_list[ver] = File.open("ext/seven_zip_ruby/seven_zip_archive.so", "rb", &:read)
+        ensure
+          ruby.run_with_devkit("bundle exec rake build_local_clean", am.devkit_for_ruby(ruby))
+          gemfile_lock.rmtree if gemfile_lock.exist?
+        end
+      end
+    end
+
     bin_list.each do |ver, bin|
       dir = "lib/seven_zip_ruby/#{ver}"
       FileUtils.mkpath(dir)
@@ -432,16 +92,29 @@ ruby_env_list.each do |ruby_vers|
         file.write(bin)
       end
     end
-    ruby_vers.first[1].rake("build_platform")
+
+    ruby = list.first
+    ruby.ruby_env do
+      begin
+        ruby.run_with_devkit("bundle exec rake build_platform", am.devkit_for_ruby(ruby))
+      ensure
+        gemfile_lock.rmtree if gemfile_lock.exist?
+      end
+    end
 
     bin_list.each do |ver, bin|
       dir = "lib/seven_zip_ruby/#{ver}"
       FileUtils.rmtree(dir)
     end
+
+    ruby.ruby_env do
+      begin
+        system("bundle exec rake build")
+      ensure
+        gemfile_lock.rmtree if gemfile_lock.exist?
+      end
+    end
   end
 end
 
-# Create normal gem.
-ret = system("rake build")
-raise "rake build error" unless (ret)
 

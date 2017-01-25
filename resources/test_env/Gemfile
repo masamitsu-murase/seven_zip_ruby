@@ -1,0 +1,4 @@
+source 'https://rubygems.org'
+
+gem 'ruby_installer_manager', git: 'https://github.com/masamitsu-murase/ruby_installer_manager.git'
+gem 'seven_zip_ruby'
