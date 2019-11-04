@@ -1761,15 +1761,44 @@ STDMETHODIMP OutStream::SetSize(UInt64 size)
 }
 
 
+#ifdef _WIN32
+#include "Shlwapi.h"
+static HINSTANCE gDllInstance = NULL;
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+    // Perform actions based on the reason for calling.
+    switch( fdwReason ) 
+    { 
+        case DLL_PROCESS_ATTACH:
+            gDllInstance = hinstDLL;
+            break;
+        case DLL_PROCESS_DETACH:
+            gDllInstance = NULL;
+            break;
+    }
+    return TRUE;
+}
+#endif
+
 extern "C" void Init_seven_zip_archive(void)
 {
     using namespace SevenZip;
     using namespace RubyCppUtil;
 
 #ifdef _WIN32
-    gSevenZipHandle = LoadLibrary("./7z.dll");
+    WCHAR modulePath[MAX_PATH];
+    GetModuleFileNameW(gDllInstance, modulePath, _countof(modulePath));
+
+    SetDllDirectory("");
+
+    PathRemoveFileSpecW(modulePath);
+    PathAppendW(modulePath, L"7z.dll");
+    gSevenZipHandle = LoadLibraryW(modulePath);
     if (!gSevenZipHandle){
-        gSevenZipHandle = LoadLibrary("./7z64.dll");
+        PathRemoveFileSpecW(modulePath);
+        PathAppendW(modulePath, L"7z64.dll");
+        gSevenZipHandle = LoadLibraryW(modulePath);
     }
 #else
     gSevenZipHandle = dlopen("./7z.so", RTLD_NOW);
