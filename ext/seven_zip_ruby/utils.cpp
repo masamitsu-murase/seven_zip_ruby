@@ -9,14 +9,16 @@
 static inline void *AllocateForBSTR(size_t cb) { return ::malloc(cb); }
 static inline void FreeForBSTR(void *pv) { ::free(pv);}
 
+#if 0
 static UINT MyStringLen(const wchar_t *s)
 { 
     UINT i;
     for (i = 0; s[i] != '\0'; i++);
     return i;
 }
+#endif
 
-BSTR SysAllocStringLen(OLECHAR *psz, UINT len)
+BSTR SysAllocStringLen(const OLECHAR *psz, UINT len)
 {
     len = sizeof(wchar_t) * len;
 
@@ -314,7 +316,7 @@ CPropVariant& CPropVariant::operator=(const char *s)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(bool bSrc)
+CPropVariant& CPropVariant::operator=(bool bSrc) throw()
 {
   if (vt != VT_BOOL)
   {
@@ -326,7 +328,7 @@ CPropVariant& CPropVariant::operator=(bool bSrc)
 }
 
 #define SET_PROP_FUNC(type, id, dest) \
-  CPropVariant& CPropVariant::operator=(type value) \
+  CPropVariant& CPropVariant::operator=(type value) throw() \
   { if (vt != id) { InternalClear(); vt = id; } \
     dest = value; return *this; }
 
@@ -364,12 +366,12 @@ static HRESULT MyPropVariantClear(PROPVARIANT *prop)
   return ::VariantClear((VARIANTARG *)prop);
 }
 
-HRESULT CPropVariant::Clear()
+HRESULT CPropVariant::Clear() throw()
 {
   return MyPropVariantClear(this);
 }
 
-HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
+HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc) throw()
 {
   ::VariantClear((tagVARIANT *)this);
   switch(pSrc->vt)
@@ -397,7 +399,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
 }
 
 
-HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
+HRESULT CPropVariant::Attach(PROPVARIANT *pSrc) throw()
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
@@ -407,7 +409,7 @@ HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
   return S_OK;
 }
 
-HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
+HRESULT CPropVariant::Detach(PROPVARIANT *pDest) throw()
 {
   HRESULT hr = MyPropVariantClear(pDest);
   if (FAILED(hr))
@@ -417,7 +419,7 @@ HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
   return S_OK;
 }
 
-HRESULT CPropVariant::InternalClear()
+HRESULT CPropVariant::InternalClear() throw()
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
@@ -572,4 +574,5 @@ void ConvertValueToProp(VALUE value, VARTYPE type, PROPVARIANT *prop)
         break;
     }
 }
+
 

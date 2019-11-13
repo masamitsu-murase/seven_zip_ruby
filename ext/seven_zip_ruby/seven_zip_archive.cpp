@@ -603,7 +603,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
                   case kOK:
                     v = Qtrue;
                     break;
-                  case kUnSupportedMethod:
+                  case kUnsupportedMethod:
                     v = unsupportedMethod;
                     break;
                   case kDataError:
