@@ -1,6 +1,7 @@
 *.7z
 *.bz2
+*.xz
 *.exe
 p7zip
-lzma
+7zip_dll
 
