@@ -13,13 +13,34 @@ $resourcedir = File.join( $basedir, "res" )
 require 'seven_zip_ruby'
 
 class TestSevenZipReader < Test::Unit::TestCase
-=begin
-	def setup
+
+	def self.startup
+		self.remove_tmpdir
 	end
 
-	def teardown
+	def self.shutdown
+		self.remove_tmpdir
 	end
-=end
+
+	def tmpdir
+		unless File.exist?( $tmpdir )
+			Dir.mkdir( $tmpdir ) rescue nil
+		end
+		$tmpdir
+	end
+
+	def self.remove_tmpdir
+		if File.exist?( $tmpdir )
+			Dir.rmdir( $tmpdir ) rescue nil
+		end
+	end
+
+	def remove_tmp_entries( entries )
+		entries.each do |f|
+			pth = File.join( $tmpdir, f )
+			File.delete( pth ) if File.exist?( pth )
+		end
+	end
 
 	def test_reader_extract_data
 		formats = [
@@ -30,8 +51,8 @@ class TestSevenZipReader < Test::Unit::TestCase
 			pth = File.join( $resourcedir, "test_reader_data.#{ext}" )
 			File.open( pth, "rb" ) do |file|
 				SevenZipRuby::Reader.open( file, :type => type ) do |szr|
-					smallest_file = szr.entries.select( &:file? ).first
-					data = szr.extract_data( smallest_file )
+					first_file = szr.entries.select( &:file? ).first
+					data = szr.extract_data( first_file )
 					data.force_encoding( Encoding::UTF_8 )
 					assert_equal( text, data )
 				end
@@ -50,15 +71,8 @@ class TestSevenZipReader < Test::Unit::TestCase
 		end
 	end
 
-	def remove_tmp_entries( entries )
-		entries.each do |f|
-			pth = File.join( $tmpdir, f )
-			File.delete( pth ) if File.exist?( pth )
-		end
-	end
-
 	def test_reader_extract
-		Dir.mkdir( $tmpdir ) rescue nil
+		tmp = tmpdir()
 
 		entries = [
 			"The Flying Spaghetti Monster.txt", 
@@ -69,18 +83,34 @@ class TestSevenZipReader < Test::Unit::TestCase
 		pth = File.join( $resourcedir, "test_reader_files.7z" )
 		File.open( pth, "rb" ) do |file|
 			SevenZipRuby::Reader.open( file ) do |szr|
-				szr.extract_all( $tmpdir )
+				szr.extract_all( tmp )
 			end
 		end
 
 		entries.each do |f|
-			pth = File.join( $tmpdir, f )
+			pth = File.join( tmp, f )
 			assert( File.exist?( pth ) )
 		end
 
 		remove_tmp_entries( entries )
-		Dir.rmdir( $tmpdir )
 	end
+
+	def test_reader_filepath_encoding_cp932
+		tmp = tmpdir()
+
+		pth = File.join( $resourcedir, "test_reader_filename_cp932.7z" )
+		File.open( pth, "rb" ) do |file|
+			SevenZipRuby::Reader.open( file ) do |szr|
+				ent = szr.entries
+				assert_equal( "石肥三年.txt", ent[0].path )
+				szr.extract_all( tmp )
+			end
+		end
+		assert( File.exist?( File.join( tmp, "石肥三年.txt" ) ) )
+
+		remove_tmp_entries( ["石肥三年.txt"] )
+	end
+
 end
 
 
