@@ -112,6 +112,75 @@ class TestSevenZipReader < Test::Unit::TestCase
 		remove_tmp_entries( ["石肥三年.txt"] )
 	end
 
+	def test_reader_extract_zs
+		data = <<EOS
+N3q8ryccAAM5UXek1gAAAAAAAACCAAAAAAAAAHAmzP/gAWcAzl0AcquM8ASZcZ9YsWJ8PeLq9S/f
+/B7sk0HmVfPeMRdIx/+HGN7+uZzlevM38ORzbn5op9BX8Kt+e2MOzGQbp4jp2XKAJZ9dP5lx4AyU
+QnwkqticRe2dhG+HqqPE2nI10yX6qSvK3HZsN9jHkAKOqF/MUk8T4iUHXKv7vgfaTWedWtjHO9Vo
+BMzMuGsh7Bbu5MaqZo9/FqQ6QzyG4y+KMnvsxN0lnkuDCfh6y3/1C/cMs8GsyAdDQsHq14eAh3YX
+AyB/0uTp7OxvM9J7k4d9UgAAAQQGAAEJgNYABwsBAAEhIQEIDIFoAAgKAYXmPCoAAAUBEUkALgAu
+AC8AVABoAGUAIABGAGwAeQBpAG4AZwAgAFMAcABhAGcAaABlAHQAdABpACAATQBvAG4AcwB0AGUA
+cgAuAHQAeAB0AAAAFAoBAA9NgCGjn9UBFQYBACAAAAAAAA==
+EOS
+		data, = *data.unpack( "m" )
+		file_name = 'The Flying Spaghetti Monster.txt'
+
+		tmp = tmpdir()
+		tmp_tmp = File.join( tmp, "tmp" )
+		Dir.mkdir( tmp_tmp ) rescue nil
+
+		file = StringIO.new( data, "rb" )
+			# szr.extract
+			safety = false
+			begin
+				SevenZipRuby::Reader.open( file ) do |szr|
+					ent = szr.entries
+					assert_equal( 1, ent.size )
+					assert_equal( "../#{file_name}", ent[0].path )
+
+					begin
+						szr.extract( ent[0].path, tmp_tmp )
+#						notify( "Vulnerable ?" )
+					rescue RuntimeError => err
+						assert_match( /Dangerous Path/i, err.message )
+						safety = true
+					end
+				end
+			rescue SevenZipRuby::InvalidOperation => err
+				# ignore
+			end
+			unless safety
+				notify( "The expected exception is not thrown." )
+			end
+			assert_path_not_exist( File.join( tmp, file_name ) )
+
+		file.rewind
+			# szr.extract_all
+			safety = false
+			begin
+				SevenZipRuby::Reader.open( file ) do |szr|
+					ent = szr.entries
+					begin
+						szr.extract_all( tmp_tmp )
+#						notify( "Vulnerable ?" )
+					rescue RuntimeError => err
+						assert_match( /Dangerous Path/i, err.message )
+						safety = true
+					end
+				end
+			rescue SevenZipRuby::InvalidOperation => err
+				# ignore
+			end
+			unless safety
+				notify( "The expected exception is not thrown." )
+			end
+			assert_path_not_exist( File.join( tmp, file_name ) )
+
+		file.close
+
+		Dir.rmdir( tmp_tmp ) if Dir.exist?( tmp_tmp )
+	end
+
 end
 
 
