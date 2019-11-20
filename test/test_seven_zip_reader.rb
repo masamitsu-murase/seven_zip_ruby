@@ -10,6 +10,7 @@ $basedir = File.dirname( $0 )
 $tmpdir = File.join( $basedir, "tmp" )
 $resourcedir = File.join( $basedir, "res" )
 
+#gem 'seven_zip_ruby_am', '< 1.2.6'
 require 'seven_zip_ruby'
 
 class TestSevenZipReader < Test::Unit::TestCase
@@ -112,5 +113,6 @@ class TestSevenZipReader < Test::Unit::TestCase
 	end
 
 end
+
 
 

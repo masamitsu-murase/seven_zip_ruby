@@ -40,12 +40,16 @@ class TestSevenZipWriter < Test::Unit::TestCase
 				assert_equal( entries[1], ent[1].path )
 				assert_equal( entries[2], ent[2].path )
 			end
+
+		file.close
 	end
 
 	def test_writer_encrypt
 		require 'digest/md5'
 		password = Random.rand
-		password = Digest::MD5.hexdigest( password.to_s )
+		notify( "Random.rand: #{password}" )
+		password = Digest::MD5.digest( password.to_s )
+		password = [password].pack( "m0" )	# base64
 
 		fl = "The Three Little Pigs.txt"
 
@@ -66,15 +70,18 @@ class TestSevenZipWriter < Test::Unit::TestCase
 				end
 			end
 
-		# SevenZipRuby::InvalidArchive is not thrown.
 #		file.rewind
-#			SevenZipRuby::Reader.open( file, :password => "INCORRECT PASSWORD" ) do |szr|
-#				first_file = szr.entries.select( &:file? ).first
-#				assert_equal( fl, first_file.path )
-#				assert_raise( SevenZipRuby::InvalidArchive ) do
-#					data = szr.extract_data( first_file )
-#					flunk( "The archive could be opened with an incollect password." )
+#			begin
+#				SevenZipRuby::Reader.open( file, :password => "INCORRECT PASSWORD" ) do |szr|
+#					first_file = szr.entries.select( &:file? ).first
+#					assert_equal( fl, first_file.path )
+#					assert_raise( SevenZipRuby::InvalidArchive ) do
+#						data = szr.extract_data( first_file )
+#						flunk( "The archive could be opened with an incollect password." )
+#					end
 #				end
+#			rescue SevenZipRuby::InvalidOperation => err
+#				# ignore
 #			end
 
 		file.rewind
@@ -82,12 +89,17 @@ class TestSevenZipWriter < Test::Unit::TestCase
 				ent = szr.entries
 				assert_equal( fl, ent[0].path )
 			end
+
+		file.close
 	end
 
 	def test_writer_encrypt_header
 		require 'digest/md5'
 		password = Random.rand
-		password = Digest::MD5.hexdigest( password.to_s )
+		notify( "Random.rand: #{password}" )
+		password = Digest::MD5.digest( password.to_s )
+		password = [password].pack( "m0" )	# base64
+
 
 		fl = "The Three Little Pigs.txt"
 
@@ -120,8 +132,11 @@ class TestSevenZipWriter < Test::Unit::TestCase
 				ent = szr.entries
 				assert_equal( fl, ent[0].path )
 			end
+
+		file.close
 	end
 
 end
+
 
 
