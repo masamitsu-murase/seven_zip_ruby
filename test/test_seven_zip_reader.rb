@@ -1,4 +1,4 @@
-# vim: tabstop=4 fileformat=linux fileencoding=utf-8 filetype=ruby
+# vim: tabstop=4 fileformat=unix fileencoding=utf-8 filetype=ruby
 
 require 'rubygems'
 # gem install test-unit
