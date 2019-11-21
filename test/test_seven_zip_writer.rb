@@ -70,19 +70,22 @@ class TestSevenZipWriter < Test::Unit::TestCase
 				end
 			end
 
-#		file.rewind
-#			begin
-#				SevenZipRuby::Reader.open( file, :password => "INCORRECT PASSWORD" ) do |szr|
-#					first_file = szr.entries.select( &:file? ).first
-#					assert_equal( fl, first_file.path )
-#					assert_raise( SevenZipRuby::InvalidArchive ) do
-#						data = szr.extract_data( first_file )
-#						flunk( "The archive could be opened with an incollect password." )
-#					end
-#				end
-#			rescue SevenZipRuby::InvalidOperation => err
-#				# ignore
-#			end
+		file.rewind
+			begin
+				SevenZipRuby::Reader.open( file, :password => "INCORRECT PASSWORD" ) do |szr|
+					first_file = szr.entries.select( &:file? ).first
+					assert_equal( fl, first_file.path )
+					# 7z 19.00 throws SevenZipRuby::InvalidArchive.
+					assert_raise( SevenZipRuby::InvalidArchive ) do
+						data = szr.extract_data( first_file )
+						# p7zip 16.02 returns nil.
+						raise SevenZipRuby::InvalidArchive.new if data.nil?
+						flunk( "The archive could be opened with an incollect password." )
+					end
+				end
+			rescue SevenZipRuby::InvalidOperation => err
+				# ignore
+			end
 
 		file.rewind
 			SevenZipRuby::Reader.open( file, :password => password ) do |szr|
