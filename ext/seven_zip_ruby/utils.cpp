@@ -448,13 +448,13 @@ VALUE ConvertBstrToString(const BSTR &bstr)
     const int char_count = SysStringLen(bstr);
 #ifdef _WIN32
     const int len = WideCharToMultiByte(CP_UTF8, 0, bstr, char_count, NULL, 0, NULL, NULL);
-    VALUE str = rb_str_new(NULL, len);
+    VALUE str = rb_tainted_str_new(NULL, len);
 
     WideCharToMultiByte(CP_UTF8, 0, bstr, char_count, RSTRING_PTR(str), len, NULL, NULL);
 #else
     size_t len;
     Utf16_To_Utf8(NULL, &len, bstr, char_count);
-    VALUE str = rb_str_new(NULL, len);
+    VALUE str = rb_tainted_str_new(NULL, len);
     Utf16_To_Utf8(RSTRING_PTR(str), &len, bstr, char_count);
 #endif
     return str;
