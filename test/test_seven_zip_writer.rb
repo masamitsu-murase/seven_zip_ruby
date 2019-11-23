@@ -80,7 +80,7 @@ class TestSevenZipWriter < Test::Unit::TestCase
 						data = szr.extract_data( first_file )
 						# p7zip 16.02 returns nil.
 						raise SevenZipRuby::InvalidArchive.new if data.nil?
-						flunk( "The archive could be opened with an incollect password." )
+						flunk( "The archive could be opened with an incorrect password." )
 					end
 				end
 			rescue SevenZipRuby::InvalidOperation => err
@@ -126,7 +126,7 @@ class TestSevenZipWriter < Test::Unit::TestCase
 			# StandardError: Invalid file format. open
 			assert_raise( StandardError ) do
 				SevenZipRuby::Reader.open( file, :password => "INCORRECT PASSWORD" ) do |szr|
-					flunk( "The archive could be opened with an incollect password." )
+					flunk( "The archive could be opened with an incorrect password." )
 				end
 			end
 
