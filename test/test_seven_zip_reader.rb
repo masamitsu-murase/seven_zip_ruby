@@ -141,7 +141,7 @@ EOS
 					begin
 						szr.extract( ent[0].path, tmp_tmp )
 #						notify( "Vulnerable ?" )
-					rescue RuntimeError => err
+					rescue SevenZipRuby::InvalidArchive => err
 						assert_match( /Dangerous Path/i, err.message )
 						safety = true
 					end
@@ -163,7 +163,7 @@ EOS
 					begin
 						szr.extract_all( tmp_tmp )
 #						notify( "Vulnerable ?" )
-					rescue RuntimeError => err
+					rescue SevenZipRuby::InvalidArchive => err
 						assert_match( /Dangerous Path/i, err.message )
 						safety = true
 					end

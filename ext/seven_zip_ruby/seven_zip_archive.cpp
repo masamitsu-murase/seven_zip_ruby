@@ -317,7 +317,11 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
 
     checkState(STATE_INITIAL, "Open error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format. open");
+        if (m_password_specified){
+            throw RubyCppUtil::RubyException("Invalid file format. open. or password is incorrect.");
+        }else{
+            throw RubyCppUtil::RubyException("Invalid file format. open.");
+        }
     }
 
     m_state = STATE_OPENED;
