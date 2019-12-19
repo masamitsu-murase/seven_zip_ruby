@@ -470,7 +470,7 @@ module SevenZipRuby
           arg_path = Pathname(arg.path)
           rp = arg_path.cleanpath
           if "..#{File::SEPARATOR}" == rp.to_s[0..2]
-            raise "#{arg.path} is Dangerous Path."
+            raise InvalidArchive.new("#{arg.path} is Dangerous Path.")
           end
           if (arg.anti?)
             pwd = Dir.pwd
