@@ -1536,7 +1536,7 @@ STDMETHODIMP InStream::Read(void *data, UInt32 size, UInt32 *processedSize)
     bool ret = m_archive->runRubyAction([&](){
         VALUE str = rb_funcall(m_stream, INTERN("read"), 1, ULONG2NUM(size));
         if (!NIL_P(str) && data){
-            std::memcpy(data, RSTRING_PTR(str), RSTRING_LEN(str));
+            memcpy(data, RSTRING_PTR(str), RSTRING_LEN(str));
         }
 
         if (processedSize){
