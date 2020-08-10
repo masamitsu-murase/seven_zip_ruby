@@ -2,6 +2,7 @@
 #include <array>
 #include <vector>
 #include <cassert>
+#include <string>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -1766,13 +1767,33 @@ extern "C" void Init_seven_zip_archive(void)
     using namespace SevenZip;
     using namespace RubyCppUtil;
 
+    VALUE mod = rb_define_module("SevenZipRuby");
+    gSevenZipModule = mod;
+
+    VALUE external_lib_dir = rb_const_get(mod, INTERN("EXTERNAL_LIB_DIR"));
+    std::string external_lib_dir_str(RSTRING_PTR(external_lib_dir), RSTRING_LEN(external_lib_dir));
+
 #ifdef _WIN32
-    gSevenZipHandle = LoadLibrary("./7z.dll");
+    const int len = MultiByteToWideChar(CP_UTF8, 0, external_lib_dir_str.c_str(), external_lib_dir_str.length(),
+                                        NULL, 0);
+    if (len == 0) {
+        rb_warning("MultiByteToWideChar error.");
+        return;
+    }
+    std::vector<wchar_t> external_lib_dir_vec(len);
+    MultiByteToWideChar(CP_UTF8, 0, external_lib_dir_str.c_str(), external_lib_dir_str.length(),
+                        &external_lib_dir_vec[0], external_lib_dir_vec.size());
+    const std::wstring external_lib_dir_wstr(&external_lib_dir_vec[0], len);
+
+    const std::wstring dll_path = external_lib_dir_wstr + L"/7z.dll";
+    gSevenZipHandle = LoadLibraryW(dll_path.c_str());
     if (!gSevenZipHandle){
-        gSevenZipHandle = LoadLibrary("./7z64.dll");
+        const std::wstring dll_path2 = external_lib_dir_wstr + L"/7z64.dll";
+        gSevenZipHandle = LoadLibraryW(dll_path2.c_str());
     }
 #else
-    gSevenZipHandle = dlopen("./7z.so", RTLD_NOW);
+    std::string dll_path = external_lib_dir_str + "/7z.so"
+    gSevenZipHandle = dlopen(dll_path.c_str(), RTLD_NOW);
 #endif
     if (!gSevenZipHandle){
         rb_warning("7z library is not found.");
@@ -1789,9 +1810,6 @@ extern "C" void Init_seven_zip_archive(void)
         return;
     }
 
-
-    VALUE mod = rb_define_module("SevenZipRuby");
-    gSevenZipModule = mod;
 
     VALUE cls;
 
