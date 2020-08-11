@@ -1771,6 +1771,10 @@ extern "C" void Init_seven_zip_archive(void)
     gSevenZipModule = mod;
 
     VALUE external_lib_dir = rb_const_get(mod, INTERN("EXTERNAL_LIB_DIR"));
+    if (!RB_TYPE_P(external_lib_dir, RUBY_T_STRING)) {
+        rb_warning("EXTERNAL_LIB_DIR should be String object.");
+        return;
+    }
     std::string external_lib_dir_str(RSTRING_PTR(external_lib_dir), RSTRING_LEN(external_lib_dir));
 
 #ifdef _WIN32
