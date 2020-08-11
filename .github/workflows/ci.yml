@@ -12,10 +12,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        ruby: [2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, head]
+        # It seems that Ruby 2.4 or this gem has a bug related to this gem.
+        ruby: [2.1, 2.2, 2.3, 2.5, 2.6, 2.7, head]
     runs-on: ${{ matrix.os }}-latest
-    # It seems that Ruby 2.4 or this gem has a bug related to this gem.
-    continue-on-error: ${{ endsWith(matrix.ruby, 'head') || endsWith(matrix.ruby, '2.4') || matrix.os == 'macos' || matrix.ruby == 'debug' }}
+    continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.os == 'macos' || matrix.ruby == 'debug' }}
     steps:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
