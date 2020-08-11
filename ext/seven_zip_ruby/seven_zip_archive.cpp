@@ -1792,7 +1792,7 @@ extern "C" void Init_seven_zip_archive(void)
         gSevenZipHandle = LoadLibraryW(dll_path2.c_str());
     }
 #else
-    std::string dll_path = external_lib_dir_str + "/7z.so"
+    std::string dll_path = external_lib_dir_str + "/7z.so";
     gSevenZipHandle = dlopen(dll_path.c_str(), RTLD_NOW);
 #endif
     if (!gSevenZipHandle){
