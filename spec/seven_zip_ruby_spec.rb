@@ -108,7 +108,8 @@ describe SevenZipRuby do
         SevenZipRubySpecHelper::SAMPLE_DATA.each do |info|
           path = Pathname(info[:name])
           expected_path = Pathname(SevenZipRubySpecHelper::SAMPLE_FILE_DIR) + info[:name]
-          expect(path.mtime.to_i).to eq expected_path.mtime.to_i
+          # Do not check mtime because seven_zip.7z is not compressed dynamically.
+          # expect(path.mtime.to_i).to eq expected_path.mtime.to_i
           expect(path.file?).to eq expected_path.file?
           (expect(File.open(path, "rb", &:read)).to eq info[:data]) if (path.file?)
         end

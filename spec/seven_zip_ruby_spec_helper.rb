@@ -34,7 +34,9 @@ module SevenZipRubySpecHelper
   SAMPLE_LARGE_RANDOM_DATA_TIMESTAMP = Time.utc(2013, 10, 22)
 
   SEVEN_ZIP_FILE = File.expand_path("seven_zip.7z", TEMP_DIR)
+  SEVEN_ZIP_FILE_ORG = File.expand_path("seven_zip.7z", BASE_DIR)
   SEVEN_ZIP_PASSWORD_FILE = File.expand_path("seven_zip_password.7z", TEMP_DIR)
+  SEVEN_ZIP_PASSWORD_FILE_ORG = File.expand_path("seven_zip_password.7z", BASE_DIR)
   SEVEN_ZIP_PASSWORD = "123 456"
 
 
@@ -75,10 +77,19 @@ module SevenZipRubySpecHelper
     end
 
     def prepare_seven_zip_file
+      FileUtils.cp(SEVEN_ZIP_FILE_ORG, SEVEN_ZIP_FILE)
+      FileUtils.cp(SEVEN_ZIP_PASSWORD_FILE_ORG, SEVEN_ZIP_PASSWORD_FILE)
+    end
+
+
+    def create_seven_zip_file
+      cleanup_sample_file
+      prepare_sample_file
+
       Dir.chdir(SAMPLE_FILE_DIR) do
         files = (Dir.glob("*", File::FNM_DOTMATCH).to_a - [ ".", ".." ]).join(" ")
-        my_system("7z a -bd \"#{SEVEN_ZIP_FILE}\" #{files}")
-        my_system("7z a -bd \"-p#{SEVEN_ZIP_PASSWORD}\" \"#{SEVEN_ZIP_PASSWORD_FILE}\" #{files}")
+        my_system("7z a -bd \"#{SEVEN_ZIP_FILE_ORG}\" #{files}")
+        my_system("7z a -bd \"-p#{SEVEN_ZIP_PASSWORD}\" \"#{SEVEN_ZIP_PASSWORD_FILE_ORG}\" #{files}")
       end
     end
 
@@ -127,3 +138,7 @@ module SevenZipRubySpecHelper
   end
 end
 
+
+if $0 == __FILE__
+  SevenZipRubySpecHelper.create_seven_zip_file
+end
