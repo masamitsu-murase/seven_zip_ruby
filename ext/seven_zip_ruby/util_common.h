@@ -503,6 +503,7 @@ inline VALUE rb_thread_create(VALUE (*func)(void *), void *p)
 {
     using new_func_type = decltype(func);
     using rb_thread_create_arg_type = first_arg_type<decltype(&::rb_thread_create)>::type;
+    static_assert(std::is_same<new_func_type, rb_thread_create_arg_type>::value, "");
     return rb_thread_create_helper<new_func_type, rb_thread_create_arg_type>(func, p);
 }
 
