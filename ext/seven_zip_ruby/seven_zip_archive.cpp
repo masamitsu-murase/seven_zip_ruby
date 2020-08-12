@@ -148,7 +148,7 @@ void ArchiveBase::startEventLoopThread()
         return;
     }
     m_event_loop_running = true;
-    rb_thread_create(staticRubyEventLoop, this);
+    RubyCppUtil::rb_thread_create(staticRubyEventLoop, this);
 }
 
 void ArchiveBase::cancelAction()

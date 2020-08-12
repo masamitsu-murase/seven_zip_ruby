@@ -6,6 +6,7 @@
 #include <utility>
 #include <string>
 #include <iostream>
+#include <type_traits>
 
 #include <ruby.h>
 
@@ -461,6 +462,49 @@ inline void rb_define_method_ext(VALUE cls, const char *name, VALUE (*func)(VALU
     rb_define_method(cls, name, RUBY_METHOD_FUNC(func), 5);
 }
 
+
+////////////////////////////////////////////////////////////////
+// Ruby 2.7 changed argument type of rb_thread_create, so I created a wrapper.
+// Ruby 2.7:
+//    VALUE rb_thread_create(VALUE (*)(void *), void*);
+// Ruby 2.6 and older:
+//    VALUE rb_thread_create(VALUE (*)(ANYARGS), void*);
+template<typename ... Args>
+class first_arg_type
+{
+  public:
+    using type = void;
+};
+
+template<typename R, typename Arg1, typename ... Args>
+class first_arg_type<R (*)(Arg1, Args...)>
+{
+  public:
+    using type = Arg1;
+};
+
+template<typename new_func_type, typename rb_thread_create_arg_type>
+inline typename std::enable_if<!std::is_same<new_func_type, rb_thread_create_arg_type>::value, VALUE>::type
+rb_thread_create_helper(VALUE (*func)(void *), void *p)
+{
+    // old version
+    return ::rb_thread_create(RUBY_METHOD_FUNC(func), p);
+}
+
+template<typename new_func_type, typename rb_thread_create_arg_type>
+inline typename std::enable_if<std::is_same<new_func_type, rb_thread_create_arg_type>::value, VALUE>::type
+rb_thread_create_helper(VALUE (*func)(void *), void *p)
+{
+    // new version
+    return ::rb_thread_create(func, p);
+}
+
+inline VALUE rb_thread_create(VALUE (*func)(void *), void *p)
+{
+    using new_func_type = decltype(func);
+    using rb_thread_create_arg_type = first_arg_type<decltype(&::rb_thread_create)>::type;
+    return rb_thread_create_helper<new_func_type, rb_thread_create_arg_type>(func, p);
+}
 
 }
 
