@@ -483,28 +483,27 @@ class first_arg_type<R (*)(Arg1, Args...)>
     using type = Arg1;
 };
 
-template<typename new_func_type, typename rb_thread_create_arg_type>
-inline typename std::enable_if<!std::is_same<new_func_type, rb_thread_create_arg_type>::value, VALUE>::type
-rb_thread_create_helper(VALUE (*func)(void *), void *p)
-{
-    // old version
-    return ::rb_thread_create(RUBY_METHOD_FUNC(func), p);
-}
+extern void *enabler;
 
-template<typename new_func_type, typename rb_thread_create_arg_type>
-inline typename std::enable_if<std::is_same<new_func_type, rb_thread_create_arg_type>::value, VALUE>::type
-rb_thread_create_helper(VALUE (*func)(void *), void *p)
+template<typename T, typename U, typename std::enable_if<std::is_same<typename first_arg_type<T>::type, U>::value>::type *& = enabler>
+inline VALUE
+rb_thread_create_helper(T thread_create, U func, void *p)
 {
     // new version
-    return ::rb_thread_create(func, p);
+    return thread_create(func, p);
+}
+
+template<typename T, typename U, typename std::enable_if<std::is_same<typename first_arg_type<T>::type, decltype(RUBY_METHOD_FUNC(std::declval<U>()))>::value>::type *& = enabler>
+inline VALUE
+rb_thread_create_helper(T thread_create, U func, void *p)
+{
+    // old version
+    return thread_create(RUBY_METHOD_FUNC(func), p);
 }
 
 inline VALUE rb_thread_create(VALUE (*func)(void *), void *p)
 {
-    using new_func_type = decltype(func);
-    using rb_thread_create_arg_type = first_arg_type<decltype(&::rb_thread_create)>::type;
-    static_assert(std::is_same<new_func_type, rb_thread_create_arg_type>::value, "");
-    return rb_thread_create_helper<new_func_type, rb_thread_create_arg_type>(func, p);
+    return rb_thread_create_helper(&::rb_thread_create, func, p);
 }
 
 }
