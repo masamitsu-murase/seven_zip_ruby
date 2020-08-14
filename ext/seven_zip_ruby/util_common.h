@@ -470,35 +470,37 @@ inline void rb_define_method_ext(VALUE cls, const char *name, VALUE (*func)(VALU
 // Ruby 2.6 and older:
 //    VALUE rb_thread_create(VALUE (*)(ANYARGS), void*);
 template<typename ... Args>
-class first_arg_type
-{
-  public:
-    using type = void;
-};
+struct first_arg_type
+{};
 
 template<typename R, typename Arg1, typename ... Args>
-class first_arg_type<R (*)(Arg1, Args...)>
+struct first_arg_type<R (*)(Arg1, Args...)>
 {
-  public:
     using type = Arg1;
 };
 
 extern void *enabler;
 
-template<typename T, typename U, typename std::enable_if<std::is_same<typename first_arg_type<T>::type, U>::value>::type *& = enabler>
-inline VALUE
-rb_thread_create_helper(T thread_create, U func, void *p)
-{
-    // new version
-    return thread_create(func, p);
-}
-
-template<typename T, typename U, typename std::enable_if<std::is_same<typename first_arg_type<T>::type, decltype(RUBY_METHOD_FUNC(std::declval<U>()))>::value>::type *& = enabler>
-inline VALUE
-rb_thread_create_helper(T thread_create, U func, void *p)
+template<
+    typename T,
+    typename U,
+    typename std::enable_if<std::is_same<typename first_arg_type<T>::type, decltype(RUBY_METHOD_FUNC(std::declval<U>()))>::value>::type *& = enabler
+>
+VALUE rb_thread_create_helper(T thread_create, U func, void *p)
 {
     // old version
     return thread_create(RUBY_METHOD_FUNC(func), p);
+}
+
+template<
+    typename T,
+    typename U,
+    typename std::enable_if<std::is_same<typename first_arg_type<T>::type, U>::value>::type *& = enabler
+>
+VALUE rb_thread_create_helper(T thread_create, U func, void *p)
+{
+    // new version
+    return thread_create(func, p);
 }
 
 inline VALUE rb_thread_create(VALUE (*func)(void *), void *p)
