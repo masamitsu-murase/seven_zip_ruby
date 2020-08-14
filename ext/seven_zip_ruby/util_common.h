@@ -483,10 +483,11 @@ extern void *enabler;
 
 template<
     typename T,
+    T thread_create,
     typename U,
     typename std::enable_if<std::is_same<typename first_arg_type<T>::type, decltype(RUBY_METHOD_FUNC(std::declval<U>()))>::value>::type *& = enabler
 >
-VALUE rb_thread_create_helper(T thread_create, U func, void *p)
+VALUE rb_thread_create_helper(U func, void *p)
 {
     // old version
     return thread_create(RUBY_METHOD_FUNC(func), p);
@@ -494,10 +495,11 @@ VALUE rb_thread_create_helper(T thread_create, U func, void *p)
 
 template<
     typename T,
+    T thread_create,
     typename U,
     typename std::enable_if<std::is_same<typename first_arg_type<T>::type, U>::value>::type *& = enabler
 >
-VALUE rb_thread_create_helper(T thread_create, U func, void *p)
+VALUE rb_thread_create_helper(U func, void *p)
 {
     // new version
     return thread_create(func, p);
@@ -505,7 +507,7 @@ VALUE rb_thread_create_helper(T thread_create, U func, void *p)
 
 inline VALUE rb_thread_create(VALUE (*func)(void *), void *p)
 {
-    return rb_thread_create_helper(&::rb_thread_create, func, p);
+    return rb_thread_create_helper<decltype(&::rb_thread_create), &::rb_thread_create>(func, p);
 }
 
 }
