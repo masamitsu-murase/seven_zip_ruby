@@ -148,7 +148,7 @@ void ArchiveBase::startEventLoopThread()
         return;
     }
     m_event_loop_running = true;
-    rb_thread_create(RUBY_METHOD_FUNC(staticRubyEventLoop), this);
+    RubyCppUtil::rb_thread_create(staticRubyEventLoop, this);
 }
 
 void ArchiveBase::cancelAction()
@@ -624,7 +624,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
     }else{
         using namespace NArchive::NExtract::NOperationResult;
         return (std::find_if(m_test_result.begin(), m_test_result.end(),
-                             std::bind2nd(std::not_equal_to<Int32>(), kOK))
+                             std::bind(std::not_equal_to<Int32>(), std::placeholders::_1, kOK))
                 == m_test_result.end()) ? Qtrue : Qfalse;
     }
 }
