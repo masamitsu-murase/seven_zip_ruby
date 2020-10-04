@@ -98,13 +98,17 @@ module SevenZipRuby
       #   SevenZipRuby::Reader.open(stream) do |szr|
       #     szr.extract(:all, "path_to_dir")
       #   end
-      def open(stream, param = {}, &block)  # :yield: szr
+      def open(stream, param = {})  # :yield: szr
         szr = self.new
         szr.open(stream, param)
-        if (block)
+        # Using `block_given?`, `yield` & omitting `&block`
+        # is faster
+        # Ref: https://github.com/JuanitoFatas/fast-ruby#proccall-and-block-arguments-vs-yieldcode
+        if block_given?
           begin
-            block.call(szr)
-            szr.close
+            yield(szr).tap do
+              szr.close
+            end
           ensure
             szr.close_file
           end
@@ -135,13 +139,17 @@ module SevenZipRuby
       #   szr = SevenZipRuby::SevenZipReader.open_file("filename.7z")
       #   # Read and extract archive.
       #   szr.close
-      def open_file(filename, param = {}, &block)  # :yield: szr
+      def open_file(filename, param = {})  # :yield: szr
         szr = self.new
         szr.open_file(filename, param)
-        if (block)
+        # Using `block_given?`, `yield` & omitting `&block`
+        # is faster
+        # Ref: https://github.com/JuanitoFatas/fast-ruby#proccall-and-block-arguments-vs-yieldcode
+        if block_given?
           begin
-            block.call(szr)
-            szr.close
+            yield(szr).tap do
+              szr.close
+            end
           ensure
             szr.close_file
           end

@@ -97,6 +97,40 @@ describe SevenZipRuby do
       end
     end
 
+    describe "singleton method: open" do
+      context "called with block" do
+        let(:block_value) { "Block value" }
+
+        subject(:returned_result) do
+          File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
+            SevenZipRuby::SevenZipReader.open(file) do |_szr|
+              block_value
+            end
+          end
+        end
+
+        it "returns block value" do
+          should eq(block_value)
+        end
+      end
+    end
+
+    describe "singleton method: open_file" do
+      context "called with block" do
+        let(:block_value) { "Block value" }
+
+        subject(:returned_result) do
+          SevenZipRuby::SevenZipReader.open_file(SevenZipRubySpecHelper::SEVEN_ZIP_FILE) do |_szr|
+            block_value
+          end
+        end
+
+        it "returns block value" do
+          should eq(block_value)
+        end
+      end
+    end
+
     example "extract archive" do
       File.open(SevenZipRubySpecHelper::SEVEN_ZIP_FILE, "rb") do |file|
         SevenZipRuby::SevenZipReader.open(file) do |szr|
