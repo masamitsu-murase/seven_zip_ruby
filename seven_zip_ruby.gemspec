@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   end
 
   spec.extensions << "ext/seven_zip_ruby/extconf.rb"
+  spec.extensions << "ext/p7zip/extconf.rb"
 end

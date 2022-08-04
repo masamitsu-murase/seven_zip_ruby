@@ -1280,7 +1280,7 @@ HRESULT CDatabase::Open()
     if (recSizeLog < Header.SectorSizeLog)
       return false;
     numSectorsInRec = 1 << (recSizeLog - Header.SectorSizeLog);
-    if (!mftRec.Parse(ByteBuf, Header.SectorSizeLog, numSectorsInRec, NULL, 0))
+    if (!mftRec.Parse(ByteBuf, Header.SectorSizeLog, numSectorsInRec, 0, NULL))
       return S_FALSE;
     if (!mftRec.IsFILE())
       return S_FALSE;

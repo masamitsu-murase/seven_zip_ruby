@@ -161,7 +161,7 @@ end
 
 ### Set compression mode
 
-7zip supports LZMA, LZMA2, PPMD, BZIP2, DEFLATE and COPY.  
+7zip supports LZMA, LZMA2, PPMD, BZIP2, DEFLATE and COPY.
 
 ```ruby
 # random data
@@ -200,11 +200,13 @@ p(Time.now - start)
 LGPL and unRAR license. Please refer to LICENSE.txt.
 
 ## Releases
-
-* 1.2.*  
+* 1.4.0
+  - Fixed C++17 comatibility (https://github.com/masamitsu-murase/seven_zip_ruby/issues/36).
+  - 7z.so (p7zip module) converted to Ruby extension in order to facilitate Ruby 3.0 compatiblity.
+* 1.3.0
+* 1.2.*
   - Fixed cosmetic bugs.
-* 1.1.0  
+* 1.1.0
   - Fixed a bug. Raises an exception when wrong password is specified.
-* 1.0.0  
+* 1.0.0
   - Initial release.
-
