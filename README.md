@@ -1,17 +1,17 @@
-# SevenZipRuby ![Logo](https://raw.github.com/masamitsu-murase/seven_zip_ruby/master/resources/seven_zip_ruby_logo.png)
+# SevenZipRuby ![Logo](https://raw.github.com/fontist/seven_zip_ruby/master/resources/seven_zip_ruby_logo.png)
 
-![Rspec](https://github.com/masamitsu-murase/seven_zip_ruby/workflows/Rspec/badge.svg) [![Gem Version](https://badge.fury.io/rb/seven_zip_ruby.png)](http://badge.fury.io/rb/seven_zip_ruby)
+![Rspec](https://github.com/fontist/seven_zip_ruby/workflows/Rspec/badge.svg) [![Gem Version](https://badge.fury.io/rb/seven-zip.png)](http://badge.fury.io/rb/seven-zip)
 
 This is a Ruby gem library to extract/compress [7-Zip](http://www.7-zip.org) archives.
 
 This extension calls the native library, 7z.dll or 7z.so, internally and these libraries are included in this gem.
 
 ## Features
-* Uses official DLL, 7z.dll, internally.
+* Uses official shared library, 7z.dll or 7z.so, internally.
 * Supports extracting data into memory.
 
 ## Document
-[RDoc](http://rubydoc.info/gems/seven_zip_ruby/frames) shows you the details.
+[RDoc](http://rubydoc.info/gems/seven-zip/frames) shows you the details.
 
 ## Examples
 
@@ -100,7 +100,6 @@ SevenZipRuby supports the following platforms.
 SevenZipRuby supports the following Ruby engines on each platform.
 
 * MRI 2.0.0 and later
-* Rubinius 2.2.1 and later
 
 ## More examples
 
@@ -188,20 +187,13 @@ p(Time.now - start)
 #  => 3.607563    # Faster than single-threaded compression.
 ```
 
-
-## TODO
-
-* Support file attributes on Linux and Mac OSX.
-* Support update of an archive.
-* Support extract of a rar archive.
-
-
 ## License
-LGPL and unRAR license. Please refer to LICENSE.txt.
+LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
 * 1.4.0
-  - Fixed C++17 comatibility (https://github.com/masamitsu-murase/seven_zip_ruby/issues/36).
+  - seven-zip gem forked from seven_zip_ruby
+  - Fixed C++17 compatibility (https://github.com/masamitsu-murase/seven_zip_ruby/issues/36).
   - 7z.so (p7zip module) converted to Ruby extension in order to facilitate Ruby 3.0 compatiblity.
 * 1.3.0
 * 1.2.*
