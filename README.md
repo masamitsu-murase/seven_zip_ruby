@@ -99,7 +99,7 @@ SevenZipRuby supports the following platforms.
 
 SevenZipRuby supports the following Ruby engines on each platform.
 
-* MRI 2.0.0 and later
+* MRI 2.3.0 and later
 
 ## More examples
 
@@ -191,6 +191,8 @@ p(Time.now - start)
 LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
+* 1.4.1
+  - Fixed minor rubygems.org issues
 * 1.4.0
   - seven-zip gem forked from seven_zip_ruby
   - Fixed C++17 compatibility (https://github.com/masamitsu-murase/seven_zip_ruby/issues/36).

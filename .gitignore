@@ -13,6 +13,7 @@ InstalledFiles
 _yardoc
 coverage
 doc/
+pkg/
 lib/bundler/man
 rdoc
 spec/reports

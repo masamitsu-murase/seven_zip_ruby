@@ -15,6 +15,12 @@ jobs:
         with:
           ruby-version: '2.7'
 
+      - run: gem update bundler
+
+      - run: bundle install
+
+      - run: bundle exec rake build
+
       - name: Publish to rubygems.org
         env:
           RUBYGEMS_API_KEY: ${{secrets.FONTIST_CI_RUBYGEMS_API_KEY}}
