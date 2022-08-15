@@ -2,7 +2,7 @@ name: Rspec
 
 on:
   push:
-    branches: [ master, reconstruct_ci ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
