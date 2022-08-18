@@ -1,10 +1,14 @@
-name: Rspec
+name: test-and-release
 
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ master ]
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.job }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -21,11 +25,19 @@ jobs:
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-    # - run: sudo apt-get install p7zip-full
-    #   if: ${{ matrix.os == 'ubuntu' }}
-    # - run: brew update && brew tap wk8/p7zip9.20 && brew install p7zip920
-    #   if: ${{ matrix.os == 'macos' }}
     - run: gem update bundler
     - run: bundle install
     - run: bundle exec rake build_local
     - run: bundle exec rake spec
+
+  release:
+    name: Release gem
+    needs: test
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: cadwallion/publish-rubygems-action@master
+        env:
+          RUBYGEMS_API_KEY: ${{secrets.FONTIST_CI_RUBYGEMS_API_KEY}}

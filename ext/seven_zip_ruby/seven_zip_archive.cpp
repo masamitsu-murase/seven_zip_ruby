@@ -1761,7 +1761,6 @@ STDMETHODIMP OutStream::SetSize(UInt64 size)
 
 }
 
-
 extern "C" void Init_seven_zip_archive(void)
 {
     using namespace SevenZip;
@@ -1796,6 +1795,8 @@ extern "C" void Init_seven_zip_archive(void)
         gSevenZipHandle = LoadLibraryW(dll_path2.c_str());
     }
 #else
+    Dl_info dl_info;
+    dladdr(reinterpret_cast<void*>(Init_seven_zip_archive), &dl_info);
     std::string dll_path = external_lib_dir_str + "/7z.so";
     gSevenZipHandle = dlopen(dll_path.c_str(), RTLD_NOW);
 #endif
@@ -1873,4 +1874,3 @@ extern "C" void Init_seven_zip_archive(void)
 #undef WRITER_FUNC
 
 }
-

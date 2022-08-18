@@ -1,6 +1,6 @@
 # SevenZipRuby ![Logo](https://raw.github.com/fontist/seven_zip_ruby/master/resources/seven_zip_ruby_logo.png)
 
-![Rspec](https://github.com/fontist/seven_zip_ruby/workflows/Rspec/badge.svg) [![Gem Version](https://badge.fury.io/rb/seven-zip.png)](http://badge.fury.io/rb/seven-zip)
+![RSpec](https://github.com/fontist/seven_zip_ruby/workflows/test-and-release/badge.svg) [![Gem Version](https://badge.fury.io/rb/seven-zip.png)](http://badge.fury.io/rb/seven-zip)
 
 This is a Ruby gem library to extract/compress [7-Zip](http://www.7-zip.org) archives.
 
@@ -191,6 +191,8 @@ p(Time.now - start)
 LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
+* 1.4.2
+  - CI improvement, cleanup of debug output
 * 1.4.1
   - Fixed minor rubygems.org issues
 * 1.4.0
