@@ -10,7 +10,7 @@ static inline void *AllocateForBSTR(size_t cb) { return ::malloc(cb); }
 static inline void FreeForBSTR(void *pv) { ::free(pv);}
 
 static UINT MyStringLen(const wchar_t *s)
-{ 
+{
     UINT i;
     for (i = 0; s[i] != '\0'; i++);
     return i;
@@ -572,4 +572,3 @@ void ConvertValueToProp(VALUE value, VARTYPE type, PROPVARIANT *prop)
         break;
     }
 }
-

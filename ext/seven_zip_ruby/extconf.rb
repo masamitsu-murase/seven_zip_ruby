@@ -89,11 +89,11 @@ def main
 
   if (RUBY_PLATFORM.include?("mswin"))
     # mswin32
-    $LIBS = "oleaut32.lib"
+    $LIBS = "oleaut32.lib shlwapi.lib"
     $CPPFLAGS = "/I.. /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
   elsif (RUBY_PLATFORM.include?("mingw"))
     # MinGW
-    $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
+    $LIBS = "-loleaut32 -lshlwapi -static-libgcc -static-libstdc++"
 
     cpp0x_flag = [ "", "-std=gnu++11", "-std=c++11", "-std=gnu++0x", "-std=c++0x" ].find do |opt|
       try_compile(sample_cpp_source, "#{opt} -x c++ ")

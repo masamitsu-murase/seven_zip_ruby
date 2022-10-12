@@ -17,7 +17,7 @@ jobs:
       matrix:
         os: [ubuntu, macos, windows]
         # It seems that Ruby 2.4 or this gem has a bug related to this gem.
-        ruby: ['2.3', '2.5', '2.6', '2.7', '3.0', '3.1', head]
+        ruby: ['2.5', '2.6', '2.7', '3.0', '3.1', head]
     runs-on: ${{ matrix.os }}-latest
     continue-on-error: ${{ endsWith(matrix.ruby, 'head') || matrix.ruby == 'debug' }}
     steps:
