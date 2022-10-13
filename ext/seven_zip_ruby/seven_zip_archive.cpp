@@ -294,7 +294,11 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
         password = rb_hash_aref(param, ID2SYM(INTERN("password")));
     });
     if (NIL_P(password)){
-        m_password_specified = false;
+//  Consistent handling of invalid or missing passwords
+//  No data is returned, no exception is raised
+//        m_password_specified = false;
+        m_password_specified = true;
+        m_password = std::string("");
     }else{
         m_password_specified = true;
         m_password = std::string(RSTRING_PTR(password), RSTRING_LEN(password));
@@ -608,7 +612,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
                   case kOK:
                     v = Qtrue;
                     break;
-                  case kUnSupportedMethod:
+                  case kUnsupportedMethod:
                     v = unsupportedMethod;
                     break;
                   case kDataError:

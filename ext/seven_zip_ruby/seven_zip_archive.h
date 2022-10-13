@@ -17,6 +17,7 @@
 #include <initguid.h>
 #else
 #include <windows.h>
+struct IEnumSTATPROPSTG;
 #include <CPP/Common/MyWindows.h>
 #include <CPP/Common/MyInitGuid.h>
 #endif

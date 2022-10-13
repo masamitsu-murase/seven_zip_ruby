@@ -61,7 +61,7 @@ File.open("filename.7z", "rb") do |file|
   SevenZipRuby::Reader.extract_all(file, "path_to_dir", { password: "Password String" })
 end
 ```
-
+If the password is invalid or missing no data will be returned for encrypted archive entries.
 
 ### Verify archives
 
@@ -99,7 +99,7 @@ SevenZipRuby supports the following platforms.
 
 SevenZipRuby supports the following Ruby engines on each platform.
 
-* MRI 2.3.0 and later
+* MRI 2.5.0 and later
 
 ## More examples
 
@@ -191,6 +191,11 @@ p(Time.now - start)
 LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
+* 1.6.0
+  - [https://github.com/niloufar] 7z update to 19.00, p7zip update to 16.02
+* 1.5.0
+  - [https://github.com/niloufar] Secure loading of libraries to prevent DLL preloading attacks
+    https://support.microsoft.com/en-us/help/2389418/secure-loading-of-libraries-to-prevent-dll-preloading-attacks
 * 1.4.2
   - CI improvement, cleanup of debug output
 * 1.4.1
