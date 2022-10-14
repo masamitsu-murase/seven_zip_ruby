@@ -191,7 +191,7 @@ p(Time.now - start)
 LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
-* 1.6.0
+* 1.6.*
   - [https://github.com/niloufar] 7z update to 19.00, p7zip update to 16.02
 * 1.5.0
   - [https://github.com/niloufar] Secure loading of libraries to prevent DLL preloading attacks
