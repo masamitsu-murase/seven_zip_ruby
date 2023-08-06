@@ -23,6 +23,10 @@
 
 #include "guid_defs.h"
 
+// For old compiler
+#ifdef NO_NULLPTR
+#define nullptr NULL
+#endif
 
 #include <ruby.h>
 #ifdef HAVE_RUBY_THREAD_H
@@ -49,10 +53,6 @@ inline VALUE rb_thread_call_without_gvl(void *(*func)(void *data), void *data1,
 }
 #endif
 
-// For old compiler
-#ifdef NO_NULLPTR
-#define nullptr NULL
-#endif
 
 namespace SevenZip
 {

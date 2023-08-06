@@ -3,6 +3,7 @@
 #include <vector>
 #include <cassert>
 #include <string>
+#include <cstddef>
 
 #ifndef _WIN32
 #include <dlfcn.h>
