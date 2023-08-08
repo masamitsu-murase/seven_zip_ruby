@@ -119,6 +119,7 @@ end
 def sample_for_nullptr
   return <<'EOS'
 #include <stdio.h>
+#include <cstddef>
 int main(int argc, char *argv[])
 {
     printf("%p\n", nullptr);
@@ -135,7 +136,7 @@ def main
   unless (try_compile(sample_for_rb_thread_call_without_gvl(th_h)))
     base_flag += " -DNO_RB_THREAD_CALL_WITHOUT_GVL"
   end
-  unless (try_compile(sample_for_nullptr))
+  unless (try_compile(sample_for_nullptr, "-x c++ "))
     base_flag += " -DNO_NULLPTR"
   end
   if (have_header("wctype.h"))

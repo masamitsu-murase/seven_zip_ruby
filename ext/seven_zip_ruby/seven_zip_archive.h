@@ -24,7 +24,6 @@ struct IEnumSTATPROPSTG;
 
 #include "guid_defs.h"
 
-
 #include <ruby.h>
 #ifdef HAVE_RUBY_THREAD_H
 #include <ruby/thread.h>
