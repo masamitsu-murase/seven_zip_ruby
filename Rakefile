@@ -2,7 +2,14 @@ require "fileutils"
 require "tempfile"
 require "bundler/gem_tasks"
 
-BINARY_FILES = [ "seven_zip_archive.so", "seven_zip_archive.bundle" ]
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:spec)
+rescue LoadError
+end
+
+BINARY_FILES = [ "seven_zip_ruby/seven_zip_archive.so", "p7zip/bin/7z.so", "seven_zip_ruby/seven_zip_archive.bundle" ]
+EXTENSIONS = [ "seven_zip_ruby", "p7zip" ]
 MAKE = (ENV["MAKE"] || ENV["make"] || (RUBY_PLATFORM.include?("mswin") ? "nmake" : "make"))
 
 task :build_platform => [ :pre_platform, :build, :post_platform ]
@@ -25,43 +32,48 @@ task :post_platform do
 end
 
 
-task :build_local_all => [ :build_local_clean, :build_local ]
+task :build_local_all => [ :clean_local, :build_local ]
 task :build_local => [ :build_binary, :copy_binary ]
 
-task :build_local_clean do
-  Dir.chdir "ext/seven_zip_ruby" do
-    sh("#{MAKE} clean") if (File.exist?("Makefile"))
+task :clean_local do
+  EXTENSIONS.each do |ext|
+    Dir.chdir "ext/#{ext}" do
+      sh("#{MAKE} clean") if (File.exist?("Makefile"))
+    end
   end
 
-  [ "ext/seven_zip_ruby", "lib/seven_zip_ruby" ].each do |dir|
-    FileUtils.rmtree(BINARY_FILES.map{ |i| "#{dir}/#{i}" })
-  end
+  FileUtils.rm_f(BINARY_FILES.map{ |i| "ext/#{i}" })
 end
 
 task :build_binary do
-  Dir.chdir "ext/seven_zip_ruby" do
-    FileUtils.rmtree BINARY_FILES
+  FileUtils.cp "ext/p7zip/makefile","ext/p7zip/makefile.old"
+  EXTENSIONS.each do |ext|
+    Dir.chdir "ext/#{ext}" do
+      FileUtils.rm_f(BINARY_FILES.map{ |i| "ext/#{i}" })
 
-    Tempfile.open([ "site", ".rb" ], Dir.pwd) do |temp|
-      temp.puts <<"EOS"
+      Tempfile.open([ "site", ".rb" ], Dir.pwd) do |temp|
+        temp.puts <<"EOS"
 require('rbconfig')
 RbConfig::CONFIG['sitearchdir'] = "../../lib"
 EOS
-      temp.flush
+        temp.flush
 
-      sh "ruby -r#{File.expand_path(temp.path)} extconf.rb"
-      temp.unlink
+        sh "ruby -r#{File.expand_path(temp.path)} extconf.rb"
+        temp.unlink
+      end
+      sh "#{MAKE}"
     end
-
-    sh "#{MAKE}"
   end
+  FileUtils.rm_f "ext/p7zip/Makefile"
+  FileUtils.mv "ext/p7zip/makefile.old","ext/p7zip/makefile"
 end
 
 task :copy_binary do
   BINARY_FILES.each do |file|
-    src = File.join("ext", "seven_zip_ruby", file)
-    dest = File.join("lib", "seven_zip_ruby", file)
+    dest = File.join("lib", "seven_zip_ruby", File.basename(file))
     FileUtils.rmtree(dest) if (File.exist?(dest))
+
+    src = File.join("ext", file)
     FileUtils.cp(src, dest) if (File.exist?(src))
   end
 end

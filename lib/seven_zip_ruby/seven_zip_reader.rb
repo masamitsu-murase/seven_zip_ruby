@@ -462,13 +462,28 @@ module SevenZipRuby
 
     def file_proc(base_dir)  # :nodoc:
       base_dir = base_dir.to_s
+      base_dir = File.expand_path(base_dir)
       return Proc.new do |type, arg|
         case(type)
         when :stream
           ret = nil
           arg_path = Pathname(arg.path)
+          rp = arg_path.cleanpath
+          if "..#{File::SEPARATOR}" == rp.to_s[0..2]
+            raise InvalidArchive.new("#{arg.path} is Dangerous Path.")
+          end
           if (arg.anti?)
-            arg_path.rmtree if (arg_path.exist?)
+            pwd = Dir.pwd
+            Dir.chdir(base_dir)
+            rp = File.join(".", arg_path.to_s)
+            begin
+              if (File.exist?(rp))
+                require 'fileutils'
+                FileUtils.remove_entry_secure(rp)
+              end
+            ensure
+              Dir.chdir(pwd) rescue nil
+            end
           elsif (arg.file?)
             path = arg_path.expand_path(base_dir)
             path.parent.mkpath

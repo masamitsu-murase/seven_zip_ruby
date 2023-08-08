@@ -4,7 +4,8 @@ require("mkmf")
 require("rbconfig")
 
 
-SO_TARGET_DIR = File.expand_path(File.join(RbConfig::CONFIG["sitearchdir"], "seven_zip_ruby"))
+#SO_TARGET_DIR = File.expand_path(File.join(RbConfig::CONFIG["sitearchdir"], "seven_zip_ruby"))
+SO_TARGET_DIR = File.expand_path(File.dirname(__FILE__), "../../lib/seven_zip_ruby")
 
 def create_p7zip_makefile(type)
   config = RbConfig::CONFIG
@@ -118,6 +119,7 @@ end
 def sample_for_nullptr
   return <<'EOS'
 #include <stdio.h>
+#include <cstddef>
 int main(int argc, char *argv[])
 {
     printf("%p\n", nullptr);
@@ -134,24 +136,27 @@ def main
   unless (try_compile(sample_for_rb_thread_call_without_gvl(th_h)))
     base_flag += " -DNO_RB_THREAD_CALL_WITHOUT_GVL"
   end
-  unless (try_compile(sample_for_nullptr))
+  unless (try_compile(sample_for_nullptr, "-x c++ "))
     base_flag += " -DNO_NULLPTR"
+  end
+  if (have_header("wctype.h"))
+    base_flag += " -DENV_HAVE_WCTYPE_H"
   end
 
   if (RUBY_PLATFORM.include?("mswin"))
     # mswin32
-    $LIBS = "oleaut32.lib"
-    $CPPFLAGS = "/I.. /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
+    $LIBS = "oleaut32.lib shlwapi.lib"
+    $CPPFLAGS = "/I..\\p7zip /EHsc /DNDEBUG /DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
   elsif (RUBY_PLATFORM.include?("mingw"))
     # MinGW
-    $LIBS = "-loleaut32 -static-libgcc -static-libstdc++"
+    $LIBS = "-loleaut32 -lshlwapi -static-libgcc -static-libstdc++"
 
     cpp0x_flag = [ "", "-std=gnu++11", "-std=c++11", "-std=gnu++0x", "-std=c++0x" ].find do |opt|
       try_compile(sample_cpp_source, "#{opt} -x c++ ")
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
+    $CPPFLAGS = "-I../p7zip #{cpp0x_flag} -DNDEBUG -DUSE_WIN32_FILE_API #{base_flag} #{$CPPFLAGS} "
   else
     removed_flags = [ /\-mmacosx\-version\-min=[.0-9]+\b/ ]
     removed_flags.each do |flag|
@@ -169,7 +174,7 @@ def main
     end
     raise "C++11 is not supported by the compiler." unless (cpp0x_flag)
 
-    $CPPFLAGS = "-I.. -I../CPP/include_windows -I../CPP #{cpp0x_flag} -DNDEBUG #{base_flag} #{$CPPFLAGS} "
+    $CPPFLAGS = "-I../p7zip -I../p7zip/CPP/include_windows -I../p7zip/CPP #{cpp0x_flag} -DNDEBUG #{base_flag} #{$CPPFLAGS} "
 
 
     ostype = check_ostype
@@ -177,18 +182,17 @@ def main
     Dir.chdir(File.expand_path("../../p7zip", __FILE__)) do
       create_p7zip_makefile(ostype)
 
-      make_success = system("make 7zso")
+      make_success = system("make common7z")
       raise "Failed to make p7zip" unless (make_success)
 
-      FileUtils.mkpath(SO_TARGET_DIR)
+#      FileUtils.mkpath(SO_TARGET_DIR)
       FileUtils.cp("./bin/7z.so", SO_TARGET_DIR)
 
-      system("make clean_7zso")
+#      system("make clean")
+      system("rm -r bin CPP/7zip/Bundles/Format7zFree/*.o CPP/7zip/Compress/Rar/*.o")
     end
   end
-
-  create_makefile("seven_zip_ruby/seven_zip_archive")
+  mfile = create_makefile("seven_zip_ruby/seven_zip_archive")
 end
 
 main
-

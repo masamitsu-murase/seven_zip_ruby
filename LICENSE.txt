@@ -1,9 +1,7 @@
 Copyright (c) 2013 Masamitsu MURASE
+Copyright (c) 2022, Ribose Inc.
 
-SevenZipRuby
-
-  The GNU LGPL + unRAR restriction means that you must follow both 
-  GNU LGPL rules and unRAR restriction rules.
+seven-zip
 
   GNU LGPL information
   --------------------
@@ -18,22 +16,5 @@ SevenZipRuby
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
     Lesser General Public License for more details.
 
-    You can receive a copy of the GNU Lesser General Public License from 
+    You can receive a copy of the GNU Lesser General Public License from
     http://www.gnu.org/
-
-
-  unRAR restriction
-  -----------------
-
-    The decompression engine for RAR archives was developed using source 
-    code of unRAR program.
-    All copyrights to original unRAR code are owned by Alexander Roshal.
-
-    The license for original unRAR code has the following restriction:
-
-      The unRAR sources cannot be used to re-create the RAR compression algorithm, 
-      which is proprietary. Distribution of modified unRAR sources in separate form 
-      or as a part of other software is permitted, provided that it is clearly
-      stated in the documentation and source comments that the code may
-      not be used to develop a RAR (WinRAR) compatible archiver.
-
