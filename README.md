@@ -191,7 +191,13 @@ p(Time.now - start)
 LGPL license. Please refer to LICENSE.txt.
 
 ## Releases
-* 1.6.*
+> The last version published at rubygems.org is 1.4.2
+> Should you need the latest version please install it from this repo
+* 1.6.2
+  - GCC 12 compatibility fix
+  - Tests for Ruby 3.2
+  - Test on Alpine Linux
+* 1.6.1
   - [https://github.com/niloufar] 7z update to 19.00, p7zip update to 16.02
 * 1.5.0
   - [https://github.com/niloufar] Secure loading of libraries to prevent DLL preloading attacks
