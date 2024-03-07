@@ -4,7 +4,8 @@ require("mkmf")
 require("rbconfig")
 
 
-SO_TARGET_DIR = File.expand_path(File.join(RbConfig::CONFIG["sitearchdir"], "seven_zip_ruby"))
+# Place the .so at $GEM_HOME/gems/seven_zip_ruby-<version>/lib/seven_zip_ruby/7z.so
+SO_TARGET_DIR = File.join(File.expand_path("../../../lib", __FILE__), "seven_zip_ruby")
 
 def create_p7zip_makefile(type)
   config = RbConfig::CONFIG
@@ -191,4 +192,3 @@ def main
 end
 
 main
-
