@@ -1,0 +1,49 @@
+name: rake
+
+on:
+  push:
+    branches: [ master, main ]
+    tags: [ v* ]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  rake-alpine:
+    name: Test on Ruby ${{ matrix.ruby.version }} ${{ matrix.os }}-${{ matrix.env.CC }}
+    runs-on: ubuntu-latest
+    env: ${{ matrix.env }}
+    container:
+      image: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - alpine:3.18
+        - alpine:3.16
+        env:
+        - CC: gcc
+          CXX: g++
+        - CC: clang
+          CXX: clang++
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Ruby
+      run: |
+        apk --no-cache --upgrade add build-base cmake git bash \
+        autoconf make binutils-dev pkgconfig tar ruby-dev clang
+
+    - name: Install Bundler
+      run: |
+        gem install bundler
+        bundle install
+
+    - run: bundle exec rake
+
+  rake:
+    needs: rake-alpine
+    uses: fontist/support/.github/workflows/rake.yml@main

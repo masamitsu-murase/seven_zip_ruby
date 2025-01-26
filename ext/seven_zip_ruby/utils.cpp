@@ -5,18 +5,22 @@
 
 ////////////////////////////////////////////////////////////////
 
+// begin import CPP/Common/MyWindows.cpp
+
 #ifndef _WIN32
 static inline void *AllocateForBSTR(size_t cb) { return ::malloc(cb); }
 static inline void FreeForBSTR(void *pv) { ::free(pv);}
 
+#if 0
 static UINT MyStringLen(const wchar_t *s)
-{ 
+{
     UINT i;
     for (i = 0; s[i] != '\0'; i++);
     return i;
 }
+#endif
 
-BSTR SysAllocStringLen(OLECHAR *psz, UINT len)
+BSTR SysAllocStringLen(const OLECHAR *psz, UINT len)
 {
     len = sizeof(wchar_t) * len;
 
@@ -85,120 +89,241 @@ UINT SysStringLen(BSTR bstr)
     return SysStringByteLen(bstr) / sizeof(OLECHAR);
 }
 
-static const Byte kUtf8Limits[5] = { 0xC0, 0xE0, 0xF0, 0xF8, 0xFC };
+// end import CPP/Common/MyWindows.cpp
 
-static Bool Utf8_To_Utf16(wchar_t *dest, size_t *destLen, const char *src, size_t srcLen)
+// begin import CPP/Common/UTFConvert.cpp
+
+#ifdef _WIN32
+#define _WCHART_IS_16BIT 1
+#endif
+
+/*
+  _UTF8_START(n) - is a base value for start byte (head), if there are (n) additional bytes after start byte
+
+  n : _UTF8_START(n) : Bits of code point
+
+  0 : 0x80 :    : unused
+  1 : 0xC0 : 11 :
+  2 : 0xE0 : 16 : Basic Multilingual Plane
+  3 : 0xF0 : 21 : Unicode space
+  3 : 0xF8 : 26 :
+  5 : 0xFC : 31 : UCS-4
+  6 : 0xFE : 36 : We can use it, if we want to encode any 32-bit value
+  7 : 0xFF :
+*/
+
+#define _UTF8_START(n) (0x100 - (1 << (7 - (n))))
+
+#define _UTF8_HEAD_PARSE2(n) if (c < _UTF8_START((n) + 1)) { numBytes = (n); c -= _UTF8_START(n); }
+
+#define _UTF8_HEAD_PARSE \
+         _UTF8_HEAD_PARSE2(1) \
+    else _UTF8_HEAD_PARSE2(2) \
+    else _UTF8_HEAD_PARSE2(3) \
+    else _UTF8_HEAD_PARSE2(4) \
+    else _UTF8_HEAD_PARSE2(5) \
+
+    // else _UTF8_HEAD_PARSE2(6)
+
+#define _ERROR_UTF8 \
+  { if (dest) dest[destPos] = (wchar_t)0xFFFD; destPos++; ok = false; continue; }
+
+static bool Utf8_To_Utf16(wchar_t *dest, size_t *destLen, const char *src, const char *srcLim) throw()
 {
-    size_t destPos = 0, srcPos = 0;
-    for (;;)
+  size_t destPos = 0;
+  bool ok = true;
+
+  for (;;)
+  {
+    Byte c;
+    if (src == srcLim)
     {
-        Byte c;
-        int numAdds;
-        if (srcPos == srcLen)
-        {
-            *destLen = destPos;
-            return True;
-        }
-        c = (Byte)src[srcPos++];
-
-        if (c < 0x80)
-        {
-            if (dest)
-                dest[destPos] = (wchar_t)c;
-            destPos++;
-            continue;
-        }
-        if (c < 0xC0)
-            break;
-        for (numAdds = 1; numAdds < 5; numAdds++)
-            if (c < kUtf8Limits[numAdds])
-                break;
-        UInt32 value = (c - kUtf8Limits[numAdds - 1]);
-
-        do
-        {
-            Byte c2;
-            if (srcPos == srcLen)
-                break;
-            c2 = (Byte)src[srcPos++];
-            if (c2 < 0x80 || c2 >= 0xC0)
-                break;
-            value <<= 6;
-            value |= (c2 - 0x80);
-        }
-        while (--numAdds != 0);
-
-        if (value < 0x10000)
-        {
-            if (dest)
-                dest[destPos] = (wchar_t)value;
-            destPos++;
-        }
-        else
-        {
-            value -= 0x10000;
-            if (value >= 0x100000)
-                break;
-            if (dest)
-            {
-                dest[destPos + 0] = (wchar_t)(0xD800 + (value >> 10));
-                dest[destPos + 1] = (wchar_t)(0xDC00 + (value & 0x3FF));
-            }
-            destPos += 2;
-        }
+      *destLen = destPos;
+      return ok;
     }
-    *destLen = destPos;
-    return False;
+    c = *src++;
+
+    if (c < 0x80)
+    {
+      if (dest)
+        dest[destPos] = (wchar_t)c;
+      destPos++;
+      continue;
+    }
+    if (c < 0xC0)
+      _ERROR_UTF8
+
+    unsigned numBytes;
+    _UTF8_HEAD_PARSE
+    else
+      _ERROR_UTF8
+
+    UInt32 val = c;
+
+    do
+    {
+      Byte c2;
+      if (src == srcLim)
+        break;
+      c2 = *src;
+      if (c2 < 0x80 || c2 >= 0xC0)
+        break;
+      src++;
+      val <<= 6;
+      val |= (c2 - 0x80);
+    }
+    while (--numBytes);
+
+    if (numBytes != 0)
+      _ERROR_UTF8
+
+    if (val < 0x10000)
+    {
+      if (dest)
+        dest[destPos] = (wchar_t)val;
+      destPos++;
+    }
+    else
+    {
+      val -= 0x10000;
+      if (val >= 0x100000)
+        _ERROR_UTF8
+      if (dest)
+      {
+        dest[destPos + 0] = (wchar_t)(0xD800 + (val >> 10));
+        dest[destPos + 1] = (wchar_t)(0xDC00 + (val & 0x3FF));
+      }
+      destPos += 2;
+    }
+  }
 }
 
-static Bool Utf16_To_Utf8(char *dest, size_t *destLen, const wchar_t *src, size_t srcLen)
+#define _UTF8_RANGE(n) (((UInt32)1) << ((n) * 5 + 6))
+
+#define _UTF8_HEAD(n, val) ((char)(_UTF8_START(n) + (val >> (6 * (n)))))
+#define _UTF8_CHAR(n, val) ((char)(0x80 + (((val) >> (6 * (n))) & 0x3F)))
+
+static size_t Utf16_To_Utf8_Calc(const wchar_t *src, const wchar_t *srcLim)
 {
-    size_t destPos = 0, srcPos = 0;
-    for (;;)
+  size_t size = srcLim - src;
+  for (;;)
+  {
+    if (src == srcLim)
+      return size;
+
+    UInt32 val = *src++;
+
+    if (val < 0x80)
+      continue;
+
+    if (val < _UTF8_RANGE(1))
     {
-        unsigned numAdds;
-        UInt32 value;
-        if (srcPos == srcLen)
-        {
-            *destLen = destPos;
-            return True;
-        }
-        value = src[srcPos++];
-        if (value < 0x80)
-        {
-            if (dest)
-                dest[destPos] = (char)value;
-            destPos++;
-            continue;
-        }
-        if (value >= 0xD800 && value < 0xE000)
-        {
-            UInt32 c2;
-            if (value >= 0xDC00 || srcPos == srcLen)
-                break;
-            c2 = src[srcPos++];
-            if (c2 < 0xDC00 || c2 >= 0xE000)
-                break;
-            value = (((value - 0xD800) << 10) | (c2 - 0xDC00)) + 0x10000;
-        }
-        for (numAdds = 1; numAdds < 5; numAdds++)
-            if (value < (((UInt32)1) << (numAdds * 5 + 6)))
-                break;
-        if (dest)
-            dest[destPos] = (char)(kUtf8Limits[numAdds - 1] + (value >> (6 * numAdds)));
-        destPos++;
-        do
-        {
-            numAdds--;
-            if (dest)
-                dest[destPos] = (char)(0x80 + ((value >> (6 * numAdds)) & 0x3F));
-            destPos++;
-        }
-        while (numAdds != 0);
+      size++;
+      continue;
     }
-    *destLen = destPos;
-    return False;
+
+    if (val >= 0xD800 && val < 0xDC00 && src != srcLim)
+    {
+      UInt32 c2 = *src;
+      if (c2 >= 0xDC00 && c2 < 0xE000)
+      {
+        src++;
+        size += 2;
+        continue;
+      }
+    }
+
+    #ifdef _WCHART_IS_16BIT
+
+    size += 2;
+
+    #else
+
+         if (val < _UTF8_RANGE(2)) size += 2;
+    else if (val < _UTF8_RANGE(3)) size += 3;
+    else if (val < _UTF8_RANGE(4)) size += 4;
+    else if (val < _UTF8_RANGE(5)) size += 5;
+    else                           size += 6;
+
+    #endif
+  }
 }
+
+static char *Utf16_To_Utf8(char *dest, const wchar_t *src, const wchar_t *srcLim)
+{
+  for (;;)
+  {
+    if (src == srcLim)
+      return dest;
+
+    UInt32 val = *src++;
+
+    if (val < 0x80)
+    {
+      *dest++ = (char)val;
+      continue;
+    }
+
+    if (val < _UTF8_RANGE(1))
+    {
+      dest[0] = _UTF8_HEAD(1, val);
+      dest[1] = _UTF8_CHAR(0, val);
+      dest += 2;
+      continue;
+    }
+
+    if (val >= 0xD800 && val < 0xDC00 && src != srcLim)
+    {
+      UInt32 c2 = *src;
+      if (c2 >= 0xDC00 && c2 < 0xE000)
+      {
+        src++;
+        val = (((val - 0xD800) << 10) | (c2 - 0xDC00)) + 0x10000;
+        dest[0] = _UTF8_HEAD(3, val);
+        dest[1] = _UTF8_CHAR(2, val);
+        dest[2] = _UTF8_CHAR(1, val);
+        dest[3] = _UTF8_CHAR(0, val);
+        dest += 4;
+        continue;
+      }
+    }
+
+    #ifndef _WCHART_IS_16BIT
+    if (val < _UTF8_RANGE(2))
+    #endif
+    {
+      dest[0] = _UTF8_HEAD(2, val);
+      dest[1] = _UTF8_CHAR(1, val);
+      dest[2] = _UTF8_CHAR(0, val);
+      dest += 3;
+      continue;
+    }
+
+    #ifndef _WCHART_IS_16BIT
+
+    UInt32 b;
+    unsigned numBits;
+         if (val < _UTF8_RANGE(3)) { numBits = 6 * 3; b = _UTF8_HEAD(3, val); }
+    else if (val < _UTF8_RANGE(4)) { numBits = 6 * 4; b = _UTF8_HEAD(4, val); }
+    else if (val < _UTF8_RANGE(5)) { numBits = 6 * 5; b = _UTF8_HEAD(5, val); }
+    else                           { numBits = 6 * 6; b = _UTF8_START(6); }
+
+    *dest++ = (Byte)b;
+
+    do
+    {
+      numBits -= 6;
+      *dest++ = (char)(0x80 + ((val >> numBits) & 0x3F));
+    }
+    while (numBits != 0);
+
+    #endif
+  }
+}
+
+// end import CPP/Common/UTFConvert.cpp
+
+// begin import CPP/Common/MyWindows.cpp
 
 HRESULT VariantClear(VARIANTARG *prop)
 {
@@ -227,7 +352,11 @@ HRESULT VariantCopy(VARIANTARG *dest, VARIANTARG *src)
 }
 #endif
 
+// end import CPP/Common/MyWindows.cpp
+
 ////////////////////////////////////////////////////////////////
+
+// begin import CPP/Windows/PropVariant.cpp
 
 namespace NWindows {
 namespace NCOM {
@@ -314,7 +443,7 @@ CPropVariant& CPropVariant::operator=(const char *s)
   return *this;
 }
 
-CPropVariant& CPropVariant::operator=(bool bSrc)
+CPropVariant& CPropVariant::operator=(bool bSrc) throw()
 {
   if (vt != VT_BOOL)
   {
@@ -326,21 +455,23 @@ CPropVariant& CPropVariant::operator=(bool bSrc)
 }
 
 #define SET_PROP_FUNC(type, id, dest) \
-  CPropVariant& CPropVariant::operator=(type value) \
+  CPropVariant& CPropVariant::operator=(type value) throw() \
   { if (vt != id) { InternalClear(); vt = id; } \
     dest = value; return *this; }
 
 SET_PROP_FUNC(Byte, VT_UI1, bVal)
-SET_PROP_FUNC(Int16, VT_I2, iVal)
+// SET_PROP_FUNC(Int16, VT_I2, iVal)
 SET_PROP_FUNC(Int32, VT_I4, lVal)
 SET_PROP_FUNC(UInt32, VT_UI4, ulVal)
 SET_PROP_FUNC(UInt64, VT_UI8, uhVal.QuadPart)
+SET_PROP_FUNC(Int64, VT_I8, hVal.QuadPart)
 SET_PROP_FUNC(const FILETIME &, VT_FILETIME, filetime)
 
 static HRESULT MyPropVariantClear(PROPVARIANT *prop)
 {
   switch(prop->vt)
   {
+    case VT_EMPTY:
     case VT_UI1:
     case VT_I1:
     case VT_I2:
@@ -359,17 +490,24 @@ static HRESULT MyPropVariantClear(PROPVARIANT *prop)
     case VT_DATE:
       prop->vt = VT_EMPTY;
       prop->wReserved1 = 0;
+      prop->wReserved2 = 0;
+      prop->wReserved3 = 0;
+      prop->uhVal.QuadPart = 0;
       return S_OK;
   }
   return ::VariantClear((VARIANTARG *)prop);
+  // return ::PropVariantClear(prop);
+  // PropVariantClear can clear VT_BLOB.
 }
 
-HRESULT CPropVariant::Clear()
+HRESULT CPropVariant::Clear() throw()
 {
+  if (vt == VT_EMPTY)
+    return S_OK;
   return MyPropVariantClear(this);
 }
 
-HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
+HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc) throw()
 {
   ::VariantClear((tagVARIANT *)this);
   switch(pSrc->vt)
@@ -397,7 +535,7 @@ HRESULT CPropVariant::Copy(const PROPVARIANT* pSrc)
 }
 
 
-HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
+HRESULT CPropVariant::Attach(PROPVARIANT *pSrc) throw()
 {
   HRESULT hr = Clear();
   if (FAILED(hr))
@@ -407,18 +545,23 @@ HRESULT CPropVariant::Attach(PROPVARIANT *pSrc)
   return S_OK;
 }
 
-HRESULT CPropVariant::Detach(PROPVARIANT *pDest)
+HRESULT CPropVariant::Detach(PROPVARIANT *pDest) throw()
 {
-  HRESULT hr = MyPropVariantClear(pDest);
-  if (FAILED(hr))
-    return hr;
+  if (pDest->vt != VT_EMPTY)
+  {
+    HRESULT hr = MyPropVariantClear(pDest);
+    if (FAILED(hr))
+      return hr;
+  }
   memcpy(pDest, this, sizeof(PROPVARIANT));
   vt = VT_EMPTY;
   return S_OK;
 }
 
-HRESULT CPropVariant::InternalClear()
+HRESULT CPropVariant::InternalClear() throw()
 {
+  if (vt == VT_EMPTY)
+    return S_OK;
   HRESULT hr = Clear();
   if (FAILED(hr))
   {
@@ -443,6 +586,8 @@ void CPropVariant::InternalCopy(const PROPVARIANT *pSrc)
 }
 }
 
+// end import CPP/Windows/PropVariant.cpp
+
 VALUE ConvertBstrToString(const BSTR &bstr)
 {
     const int char_count = SysStringLen(bstr);
@@ -452,10 +597,9 @@ VALUE ConvertBstrToString(const BSTR &bstr)
 
     WideCharToMultiByte(CP_UTF8, 0, bstr, char_count, RSTRING_PTR(str), len, NULL, NULL);
 #else
-    size_t len;
-    Utf16_To_Utf8(NULL, &len, bstr, char_count);
+   size_t len = Utf16_To_Utf8_Calc(bstr, bstr + char_count);
     VALUE str = rb_str_new(NULL, len);
-    Utf16_To_Utf8(RSTRING_PTR(str), &len, bstr, char_count);
+    Utf16_To_Utf8(RSTRING_PTR(str), bstr, bstr + char_count);
 #endif
     return str;
 }
@@ -468,10 +612,10 @@ BSTR ConvertStringToBstr(const std::string &str)
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), ret, len);
     return ret;
 #else
-    size_t len;
-    Utf8_To_Utf16(NULL, &len, str.c_str(), str.length());
+    size_t len = 0;
+    Utf8_To_Utf16(NULL, &len, str.c_str(), str.c_str() + str.length());
     BSTR ret = SysAllocStringLen(NULL, len);
-    Utf8_To_Utf16(ret, &len, str.c_str(), str.length());
+    Utf8_To_Utf16(ret, &len, str.c_str(), str.c_str() + str.length());
     return ret;
 #endif
 }
@@ -572,4 +716,3 @@ void ConvertValueToProp(VALUE value, VARTYPE type, PROPVARIANT *prop)
         break;
     }
 }
-

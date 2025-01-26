@@ -17,12 +17,12 @@
 #include <initguid.h>
 #else
 #include <windows.h>
+struct IEnumSTATPROPSTG;
 #include <CPP/Common/MyWindows.h>
 #include <CPP/Common/MyInitGuid.h>
 #endif
 
 #include "guid_defs.h"
-
 
 #include <ruby.h>
 #ifdef HAVE_RUBY_THREAD_H

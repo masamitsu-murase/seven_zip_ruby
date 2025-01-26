@@ -1,0 +1,21 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      next_version:
+        description: |
+          Next release version. Possible values: x.y.z, major, minor, patch (or pre|rc|etc).
+          Also, you can pass 'skip' to skip 'git tag' and do 'gem push' for the current version
+        required: true
+        default: 'skip'
+  repository_dispatch:
+    types: [ do-release ]
+
+jobs:
+  release:
+    uses: fontist/support/.github/workflows/release.yml@main
+    with:
+      next_version: ${{ github.event.inputs.next_version }}
+    secrets:
+      rubygems-api-key: ${{ secrets.FONTIST_CI_RUBYGEMS_API_KEY }}

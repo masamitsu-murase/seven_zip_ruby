@@ -13,6 +13,7 @@ InstalledFiles
 _yardoc
 coverage
 doc/
+pkg/
 lib/bundler/man
 rdoc
 spec/reports
@@ -24,3 +25,4 @@ ext/seven_zip_ruby/Makefile
 ext/seven_zip_ruby/*.def
 ext/seven_zip_ruby/*.pdb
 ext/p7zip/makefile.machine
+.vscode
