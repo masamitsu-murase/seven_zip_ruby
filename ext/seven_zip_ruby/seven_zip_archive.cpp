@@ -3,6 +3,7 @@
 #include <vector>
 #include <cassert>
 #include <string>
+#include <cstddef>
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -294,7 +295,11 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
         password = rb_hash_aref(param, ID2SYM(INTERN("password")));
     });
     if (NIL_P(password)){
-        m_password_specified = false;
+//  Consistent handling of invalid or missing passwords
+//  No data is returned, no exception is raised
+//        m_password_specified = false;
+        m_password_specified = true;
+        m_password = std::string("");
     }else{
         m_password_specified = true;
         m_password = std::string(RSTRING_PTR(password), RSTRING_LEN(password));
@@ -318,7 +323,11 @@ VALUE ArchiveReader::open(VALUE in_stream, VALUE param)
 
     checkState(STATE_INITIAL, "Open error");
     if (ret != S_OK){
-        throw RubyCppUtil::RubyException("Invalid file format. open");
+        if (m_password_specified){
+            throw RubyCppUtil::RubyException("Invalid file format. open. or password is incorrect.");
+        }else{
+            throw RubyCppUtil::RubyException("Invalid file format. open.");
+        }
     }
 
     m_state = STATE_OPENED;
@@ -604,7 +613,7 @@ VALUE ArchiveReader::testAll(VALUE detail)
                   case kOK:
                     v = Qtrue;
                     break;
-                  case kUnSupportedMethod:
+                  case kUnsupportedMethod:
                     v = unsupportedMethod;
                     break;
                   case kDataError:
@@ -1757,10 +1766,27 @@ STDMETHODIMP OutStream::SetSize(UInt64 size)
     return S_OK;
 }
 
-
-
 }
 
+#ifdef _WIN32
+#include "Shlwapi.h"
+static HINSTANCE gDllInstance = NULL;
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
+{
+    // Perform actions based on the reason for calling.
+    switch( fdwReason )
+    {
+        case DLL_PROCESS_ATTACH:
+            gDllInstance = hinstDLL;
+            break;
+        case DLL_PROCESS_DETACH:
+            gDllInstance = NULL;
+            break;
+    }
+    return TRUE;
+}
+#endif
 
 extern "C" void Init_seven_zip_archive(void)
 {
@@ -1778,24 +1804,22 @@ extern "C" void Init_seven_zip_archive(void)
     std::string external_lib_dir_str(RSTRING_PTR(external_lib_dir), RSTRING_LEN(external_lib_dir));
 
 #ifdef _WIN32
-    const int len = MultiByteToWideChar(CP_UTF8, 0, external_lib_dir_str.c_str(), external_lib_dir_str.length(),
-                                        NULL, 0);
-    if (len == 0) {
-        rb_warning("MultiByteToWideChar error.");
-        return;
-    }
-    std::vector<wchar_t> external_lib_dir_vec(len);
-    MultiByteToWideChar(CP_UTF8, 0, external_lib_dir_str.c_str(), external_lib_dir_str.length(),
-                        &external_lib_dir_vec[0], external_lib_dir_vec.size());
-    const std::wstring external_lib_dir_wstr(&external_lib_dir_vec[0], len);
+    WCHAR modulePath[MAX_PATH];
+    GetModuleFileNameW(gDllInstance, modulePath, _countof(modulePath));
 
-    const std::wstring dll_path = external_lib_dir_wstr + L"/7z.dll";
-    gSevenZipHandle = LoadLibraryW(dll_path.c_str());
+    SetDllDirectory("");
+
+    PathRemoveFileSpecW(modulePath);
+    PathAppendW(modulePath, L"7z.dll");
+    gSevenZipHandle = LoadLibraryW(modulePath);
     if (!gSevenZipHandle){
-        const std::wstring dll_path2 = external_lib_dir_wstr + L"/7z64.dll";
-        gSevenZipHandle = LoadLibraryW(dll_path2.c_str());
+        PathRemoveFileSpecW(modulePath);
+        PathAppendW(modulePath, L"7z64.dll");
+        gSevenZipHandle = LoadLibraryW(modulePath);
     }
 #else
+    Dl_info dl_info;
+    dladdr(reinterpret_cast<void*>(Init_seven_zip_archive), &dl_info);
     std::string dll_path = external_lib_dir_str + "/7z.so";
     gSevenZipHandle = dlopen(dll_path.c_str(), RTLD_NOW);
 #endif
@@ -1873,4 +1897,3 @@ extern "C" void Init_seven_zip_archive(void)
 #undef WRITER_FUNC
 
 }
-

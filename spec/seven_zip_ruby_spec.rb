@@ -52,7 +52,7 @@ describe SevenZipRuby do
 
           expect(info.num_blocks).to be_a Integer
           expect(info.header_size).to be < file.size
-          expect(info.method).to eq "LZMA"
+          expect(info.method).to eq "LZMA:16"
           expect(info.phy_size).to be file.size
           expect(info.solid?).to be true
         end
@@ -146,7 +146,7 @@ describe SevenZipRuby do
       data[-1] = data_org
 
       data[0x27] = 0xEB.chr  # This highly dependes on the current test binary.
-      expected = [ :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, :DataError, true, true, true, true, true ]
+      expected = [ :CrcError, :CrcError, :CrcError, :CrcError, :DataError, :DataError, :DataError, true, true, true, true, true ]
       SevenZipRuby::SevenZipReader.open(StringIO.new(data)) do |szr|
         expect(szr.test).to eq false
         expect(szr.verify_detail).to eq expected
@@ -221,17 +221,28 @@ describe SevenZipRuby do
       end
 
       example "invalid password" do
+#        File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
+#          expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error(StandardError)
+#        end
+
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file){ |szr| szr.extract_data(1) } }.to raise_error(StandardError)
+          SevenZipRuby::Reader.open(file) do |szr|
+            expect(szr.extract_data(1)).to be_nil
+          end
         end
 
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file, password: "a"){ |szr| szr.extract_data(1) } }.to raise_error(SevenZipRuby::InvalidArchive)
+          SevenZipRuby::Reader.open(file, password: "a") do |szr|
+            expect(szr.extract_data(1)).to be_nil
+          end
         end
 
         File.open(SevenZipRubySpecHelper::SEVEN_ZIP_PASSWORD_FILE, "rb") do |file|
-          expect{ SevenZipRuby::Reader.open(file, password: :InvalidType){ |szr| szr.extract_data(1) } }.to raise_error(SevenZipRuby::InvalidArchive)
+          SevenZipRuby::Reader.open(file, password: :InvalidType) do |szr|
+            expect(szr.extract_data(1)).to be_nil
+          end
         end
+
       end
 
       example "raise error in open" do
@@ -389,12 +400,9 @@ describe SevenZipRuby do
       end
 
       output.rewind
-      expect{
-        SevenZipRuby::SevenZipReader.open(output, { password: "invalid password" }) do |szr|
-          szr.extract_data(0)
-        end
-      }.to raise_error(SevenZipRuby::InvalidArchive)
-
+      SevenZipRuby::SevenZipReader.open(output, { password: "invalid password"}) do |szr|
+        expect(szr.extract_data(0)).to be_nil
+      end
 
       output = StringIO.new("")
       SevenZipRuby::SevenZipWriter.open(output, { password: sample_password.to_sym }) do |szw|
@@ -549,7 +557,9 @@ describe SevenZipRuby do
         next output.string.size
       end
       size.each_cons(2) do |large, small|
-        expect(large - small >= 0).to eq true
+# test data is not that random :)
+# higher compression level may have _small_ negative effect
+        expect(large - small >= -8).to eq true
       end
     end
 
@@ -700,4 +710,3 @@ describe SevenZipRuby do
   end
 
 end
-

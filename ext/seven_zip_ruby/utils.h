@@ -13,6 +13,7 @@
 
 #include <ruby.h>
 
+#include <CPP/Common/Common.h>
 #include <CPP/Windows/PropVariant.h>
 
 VALUE ConvertBstrToString(const BSTR &bstr);
@@ -23,3 +24,4 @@ VALUE ConvertPropToValue(const PROPVARIANT &prop);
 void ConvertValueToProp(VALUE value, VARTYPE type, PROPVARIANT *prop);
 
 #endif
+
